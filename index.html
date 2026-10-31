@@ -164,6 +164,8 @@ footer{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.
 .tab i{display:block;width:22px;height:3px;background:var(--line)}
 #map{height:calc(100vh - 310px);min-height:320px;background:#0b0d10;border:1px solid var(--line)}
 .leaflet-container{background:#0b0d10;font-family:var(--body)}
+:root:not([data-theme="light"]) .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.6)}
+.leaflet-container svg{max-width:none}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--panel);color:var(--ink);border:1px solid var(--line);box-shadow:none}
 .leaflet-popup-content{font-size:12.5px;line-height:1.45;margin:10px 12px}
 .leaflet-popup-content b{font-family:var(--display);font-size:16px}
@@ -291,7 +293,7 @@ footer{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.
       <div class="tableWrap"><table id="modelTable"></table></div>
       <div class="caption" id="tableCap"></div>
     </section>
-    <footer>Forecasts: Open-Meteo (CC BY 4.0) serving ECMWF, NOAA GFS, DWD ICON, UK Met Office, Météo-France and KNMI, plus ECMWF (51) and GEFS (31) ensembles. Live observations and tide predictions: Harwich Haven Authority (hha.co.uk), heights above Harwich chart datum; Open-Meteo marine model (MSL) as fallback. Tide size: predicted range against Harwich springs 3.6 m / neaps 2.3 m. Windy, XC Weather, BBC and PredictWind draw on these same models. GO FAST · WIN RACE v2.1 beta · venues, airport observations and EA tide gauges are new; Levington keeps its Harwich Haven feeds.</footer>
+    <footer>Forecasts: Open-Meteo (CC BY 4.0) serving ECMWF, NOAA GFS, DWD ICON, UK Met Office, Météo-France and KNMI, plus ECMWF (51) and GEFS (31) ensembles. Live observations and tide predictions: Harwich Haven Authority (hha.co.uk), heights above Harwich chart datum; Open-Meteo marine model (MSL) as fallback. Tide size: predicted range against Harwich springs 3.6 m / neaps 2.3 m. Windy, XC Weather, BBC and PredictWind draw on these same models. GO FAST · WIN RACE v2.2 beta · venues, airport observations and EA tide gauges are new; Levington keeps its Harwich Haven feeds.</footer>
   </main>
 
   <!-- PAGE: MAP -->
@@ -300,7 +302,7 @@ footer{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.
     <div id="map" role="application" aria-label="Map of venue and live stations"></div>
     <div class="mapBar" id="mapBar" hidden><span id="mapBarTxt"></span><button type="button" id="mapUse">Use this spot as venue</button><button type="button" id="mapCancel">Cancel</button></div>
     <div class="legend"><span><i style="background:var(--accent);height:10px;width:10px;border-radius:50%"></i>Forecast point (venue)</span><span><i style="background:var(--obs);height:10px;width:10px;border-radius:50%"></i>Plotted station</span><span><i style="background:var(--ink-3);height:10px;width:10px;border-radius:50%"></i>Other station</span><span><i style="background:var(--tide);height:10px;width:10px;border-radius:50%"></i>Tide gauge</span><span><i style="border:1px dashed var(--accent);height:10px;width:10px;border-radius:50%;background:none"></i>Search radius</span></div>
-    <div class="caption">Forecasts, ensembles and the modelled tide are for the amber point. Tap a station for its latest reading and to plot it instead; tap anywhere else to set a new venue there. Map © OpenStreetMap contributors, © CARTO.</div>
+    <div class="caption">Forecasts, ensembles and the modelled tide are for the amber point. Tap a station for its latest reading and to plot it instead; tap anywhere else to set a new venue there. Map © OpenStreetMap contributors.</div>
   </main>
 
   <nav class="tabs" aria-label="Pages">
@@ -955,17 +957,17 @@ function updateLeds(){setLed('ledModels',wind?(wind.models.length>=4?'ok':'warn'
   setLed('ledLive',!relayURL()?'':byDist().length?'ok':'warn');setLed('ledTide',hhaPred?'ok':omTide?'warn':'bad')}
 function applyTheme(){const t=store.theme;const root=document.documentElement;if(t)root.setAttribute('data-theme',t);else root.removeAttribute('data-theme');
   const dark=t!=='light';$('themeBtn').title=dark?'Switch to day mode':'Switch to night mode'}
-$('themeBtn').addEventListener('click',()=>{const root=document.documentElement;const dark=root.getAttribute('data-theme')!=='light';store.theme=dark?'light':'dark';save();applyTheme();render();if(map){map._tiles.remove();map._tiles=tileLayer().addTo(map)}});
+$('themeBtn').addEventListener('click',()=>{const root=document.documentElement;const dark=root.getAttribute('data-theme')!=='light';store.theme=dark?'light':'dark';save();applyTheme();render()});
 applyTheme();
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id===t.dataset.page));store.page=t.dataset.page;save();window.scrollTo(0,0);if(t.dataset.page==='pgTrace')renderTimeline(windowStats());if(t.dataset.page==='pgLive')renderLiveChart(windowStats());if(t.dataset.page==='pgMap')renderMap()}));
 if(store.page&&document.getElementById(store.page)){const t=document.querySelector('.tab[data-page="'+store.page+'"]');if(t)t.click()}
 $('gearBtn').addEventListener('click',()=>$('sheet').classList.add('on'));
 // ---------- map ----------
 var map,mapLayer,mapTmp,mapPt;
-function tileLayer(){const dark=document.documentElement.getAttribute('data-theme')!=='light';return L.tileLayer(`https://{s}.basemaps.cartocdn.com/${dark?'dark_all':'light_all'}/{z}/{x}/{y}{r}.png`,{maxZoom:18,subdomains:'abcd',attribution:'© OpenStreetMap contributors © CARTO'})}
+function tileLayer(){return L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'})}
 function renderMap(){
   const el=$('map');if(!window.L){el.innerHTML='<p class="note" style="padding:12px">Map library did not load (offline?).</p>';return}
-  if(!map){map=L.map(el,{zoomControl:true,attributionControl:true});map._tiles=tileLayer().addTo(map);mapLayer=L.layerGroup().addTo(map);
+  if(!map){map=L.map(el,{zoomControl:true,attributionControl:true,renderer:L.canvas()});map._tiles=tileLayer().addTo(map);mapLayer=L.layerGroup().addTo(map);
     map.on('click',e=>{mapPt=e.latlng;if(mapTmp)mapTmp.remove();mapTmp=L.circleMarker(e.latlng,{radius:7,color:'#ffb000',fillColor:'#000',fillOpacity:1,weight:2,dashArray:'3 3'}).addTo(map);$('mapBarTxt').textContent=`${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)} · ${distNm(V(),{lat:e.latlng.lat,lon:e.latlng.lng}).toFixed(1)} nm from ${V().name}`;$('mapBar').hidden=false})}
   mapLayer.clearLayers();const v=V();
   const Rm=radiusNm()*NM*1000;
