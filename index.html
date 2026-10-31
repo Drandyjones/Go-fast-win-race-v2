@@ -37,6 +37,7 @@
   --m1:#2a78d6; --m2:#eb6834; --m3:#1baf7a; --m4:#eda100; --m5:#e87ba4; --m6:#6250d6;
   --tide:#0a7db0; --tide-rgb:10,125,176; --tide-fill:rgba(10,125,176,.16); color-scheme:light}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.45 var(--body);font-variant-numeric:tabular-nums}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
@@ -161,6 +162,16 @@ footer{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:9;background:var(--bg);border-top:1px solid var(--line);display:flex;padding:6px max(16px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .tab{flex:1;background:none;border:0;color:var(--ink-3);font:700 11px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;padding:10px 0 8px;display:grid;gap:6px;justify-items:center;border-radius:0}
 .tab i{display:block;width:22px;height:3px;background:var(--line)}
+#map{height:calc(100vh - 310px);min-height:320px;background:#0b0d10;border:1px solid var(--line)}
+.leaflet-container{background:#0b0d10;font-family:var(--body)}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--panel);color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.leaflet-popup-content{font-size:12.5px;line-height:1.45;margin:10px 12px}
+.leaflet-popup-content b{font-family:var(--display);font-size:16px}
+.leaflet-popup-content .pl{display:inline-block;margin-top:6px;color:var(--accent);font-weight:600;cursor:pointer}
+.leaflet-control-attribution{background:rgba(0,0,0,.6)!important;color:var(--ink-3)!important;font-size:9px!important}
+.leaflet-control-attribution a{color:var(--ink-2)!important}
+.leaflet-bar a{background:var(--panel)!important;color:var(--ink)!important;border-color:var(--line)!important}
+.mapBar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0;font-family:var(--mono);font-size:11px;color:var(--ink-2)}
 .tab.on{color:var(--ink)} .tab.on i{background:var(--accent)}
 /* settings sheet */
 .sheet{position:fixed;inset:0;z-index:20;background:var(--bg);overflow:auto;display:none;padding-block:calc(10px + env(safe-area-inset-top,0px)) 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -280,7 +291,16 @@ footer{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.
       <div class="tableWrap"><table id="modelTable"></table></div>
       <div class="caption" id="tableCap"></div>
     </section>
-    <footer>Forecasts: Open-Meteo (CC BY 4.0) serving ECMWF, NOAA GFS, DWD ICON, UK Met Office, Météo-France and KNMI, plus ECMWF (51) and GEFS (31) ensembles. Live observations and tide predictions: Harwich Haven Authority (hha.co.uk), heights above Harwich chart datum; Open-Meteo marine model (MSL) as fallback. Tide size: predicted range against Harwich springs 3.6 m / neaps 2.3 m. Windy, XC Weather, BBC and PredictWind draw on these same models. GO FAST · WIN RACE v2.0 beta · venues, airport observations and EA tide gauges are new; Levington keeps its Harwich Haven feeds.</footer>
+    <footer>Forecasts: Open-Meteo (CC BY 4.0) serving ECMWF, NOAA GFS, DWD ICON, UK Met Office, Météo-France and KNMI, plus ECMWF (51) and GEFS (31) ensembles. Live observations and tide predictions: Harwich Haven Authority (hha.co.uk), heights above Harwich chart datum; Open-Meteo marine model (MSL) as fallback. Tide size: predicted range against Harwich springs 3.6 m / neaps 2.3 m. Windy, XC Weather, BBC and PredictWind draw on these same models. GO FAST · WIN RACE v2.1 beta · venues, airport observations and EA tide gauges are new; Levington keeps its Harwich Haven feeds.</footer>
+  </main>
+
+  <!-- PAGE: MAP -->
+  <main class="page wide" id="pgMap">
+    <h2>Where the data comes from<span class="tag" id="mapTag"></span></h2>
+    <div id="map" role="application" aria-label="Map of venue and live stations"></div>
+    <div class="mapBar" id="mapBar" hidden><span id="mapBarTxt"></span><button type="button" id="mapUse">Use this spot as venue</button><button type="button" id="mapCancel">Cancel</button></div>
+    <div class="legend"><span><i style="background:var(--accent);height:10px;width:10px;border-radius:50%"></i>Forecast point (venue)</span><span><i style="background:var(--obs);height:10px;width:10px;border-radius:50%"></i>Plotted station</span><span><i style="background:var(--ink-3);height:10px;width:10px;border-radius:50%"></i>Other station</span><span><i style="background:var(--tide);height:10px;width:10px;border-radius:50%"></i>Tide gauge</span><span><i style="border:1px dashed var(--accent);height:10px;width:10px;border-radius:50%;background:none"></i>Search radius</span></div>
+    <div class="caption">Forecasts, ensembles and the modelled tide are for the amber point. Tap a station for its latest reading and to plot it instead; tap anywhere else to set a new venue there. Map © OpenStreetMap contributors, © CARTO.</div>
   </main>
 
   <nav class="tabs" aria-label="Pages">
@@ -288,6 +308,7 @@ footer{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.
     <button class="tab" data-page="pgTrace" type="button"><i></i>Trace</button>
     <button class="tab" data-page="pgCond" type="button"><i></i>Conditions</button>
     <button class="tab" data-page="pgLive" type="button"><i></i>Live</button>
+    <button class="tab" data-page="pgMap" type="button"><i></i>Map</button>
   </nav>
 
   <!-- VENUE SHEET -->
@@ -348,6 +369,8 @@ footer{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.
   </div>
 </div>
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 (function(){
 const VENUES_BUILTIN=[{id:'levington',name:'Levington · Suffolk Yacht Harbour',sub:'River Orwell · UK',lat:51.995,lon:1.274,tide:{lat:51.93,lon:1.33},hha:true,stream:{streamMethod:'prism',slackOff:30,kStream:1.4,aLW:2,aHW:8,chW:250,chD:6,flW:800,flH:1.5,diamond:''}}];
@@ -452,7 +475,7 @@ async function load(){
       Object.keys(by).forEach(id=>{const o=by[id][0];if(distNm(V(),{lat:o.lat,lon:o.lon})>R)return;regStation(id,(o.name||id).replace(/,.*$/,''),'metar',o.lat,o.lon,by[id].map(r=>({t:(r.obsTime||0)*1000,spd:typeof r.wspd==='number'?r.wspd:null,gst:typeof r.wgst==='number'?r.wgst:null,dir:typeof r.wdir==='number'?r.wdir:null,p:typeof r.altim==='number'?r.altim:null,temp:typeof r.temp==='number'?r.temp:null})),'hourly')})}).catch(e=>{msgs.push('airport obs failed')}));
     if(V().lat>49.5&&V().lat<61&&V().lon>-9&&V().lon<2.5&&!V().hha){jobs.push(getJSON(`https://environment.data.gov.uk/flood-monitoring/id/stations?parameter=level&type=TideGauge&lat=${V().lat}&long=${V().lon}&dist=${Math.round(radiusNm()*NM)}`).then(async j=>{const items=(j.items||[]).filter(s=>s.lat&&s.long).sort((a,b)=>distNm(V(),{lat:a.lat,lon:a.long})-distNm(V(),{lat:b.lat,lon:b.long}));if(!items.length)return;const s=items[0];const m=(s.measures||[]).find(x=>/tidal/i.test(x.qualifier||'')||/level/i.test(x.parameterName||''))||(s.measures||[])[0];if(!m)return;
       const since=new Date(Date.now()-26*36e5).toISOString().slice(0,19)+'Z';const r=await getJSON(`${m['@id']}/readings?_sorted&since=${since}`);const rd=(r.items||[]).filter(x=>x.value!=null).map(x=>({t:Date.parse(x.dateTime),h:x.value})).sort((a,b)=>a.t-b.t);
-      if(rd.length)eaGauge={name:s.label,dist:distNm(V(),{lat:s.lat,lon:s.long}),unit:m.unitName||'m',readings:rd}}).catch(e=>{}))}}
+      if(rd.length)eaGauge={name:s.label,lat:s.lat,lon:s.long,dist:distNm(V(),{lat:s.lat,lon:s.long}),unit:m.unitName||'m',readings:rd}}).catch(e=>{}))}}
   await Promise.all(jobs);
   const nSt=byDist().length;if(relayURL())msgs.push(nSt?`${nSt} live station${nSt>1?'s':''} within ${radiusNm()} nm`:`no live wind within ${radiusNm()} nm`);else msgs.push('no relay: live data off');
   fillStationSelect();
@@ -569,6 +592,7 @@ function render(){
   const st=windowStats();const errs=[];
   [['brief',()=>renderBrief(st)],['tiles',()=>renderTiles(st)],['live',()=>renderLive()],['liveChart',()=>renderLiveChart(st)],['timeline',()=>renderTimeline(st)],['shifts',()=>renderShifts(st)],['compass',()=>renderCompass(st)],['speedbar',()=>renderSpeed(st)],['modelTable',()=>renderTable(st)],['streamNote',()=>renderStreamNote(st)]].forEach(([id,fn])=>{try{fn()}catch(e){errs.push(id+': '+(e&&e.message||e));const el=$(id);if(el)el.innerHTML=`<p class="err">This panel hit an error (${(e&&e.message||e)}). Pull to refresh; if it persists, send this message to Claude.</p>`}});
   if(errs.length)console.error('render errors',errs);
+  if(map&&$('pgMap').classList.contains('on')){try{renderMap()}catch(e){console.error(e)}}
 }
 function renderLiveChart(st){
   const el=$('liveChart'),tag=$('accTag');if(!wind){el.innerHTML='<p class="caption">Waiting for forecast…</p>';return}
@@ -931,11 +955,36 @@ function updateLeds(){setLed('ledModels',wind?(wind.models.length>=4?'ok':'warn'
   setLed('ledLive',!relayURL()?'':byDist().length?'ok':'warn');setLed('ledTide',hhaPred?'ok':omTide?'warn':'bad')}
 function applyTheme(){const t=store.theme;const root=document.documentElement;if(t)root.setAttribute('data-theme',t);else root.removeAttribute('data-theme');
   const dark=t!=='light';$('themeBtn').title=dark?'Switch to day mode':'Switch to night mode'}
-$('themeBtn').addEventListener('click',()=>{const root=document.documentElement;const dark=root.getAttribute('data-theme')!=='light';store.theme=dark?'light':'dark';save();applyTheme();render()});
+$('themeBtn').addEventListener('click',()=>{const root=document.documentElement;const dark=root.getAttribute('data-theme')!=='light';store.theme=dark?'light':'dark';save();applyTheme();render();if(map){map._tiles.remove();map._tiles=tileLayer().addTo(map)}});
 applyTheme();
-document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id===t.dataset.page));store.page=t.dataset.page;save();window.scrollTo(0,0);if(t.dataset.page==='pgTrace')renderTimeline(windowStats());if(t.dataset.page==='pgLive')renderLiveChart(windowStats())}));
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id===t.dataset.page));store.page=t.dataset.page;save();window.scrollTo(0,0);if(t.dataset.page==='pgTrace')renderTimeline(windowStats());if(t.dataset.page==='pgLive')renderLiveChart(windowStats());if(t.dataset.page==='pgMap')renderMap()}));
 if(store.page&&document.getElementById(store.page)){const t=document.querySelector('.tab[data-page="'+store.page+'"]');if(t)t.click()}
 $('gearBtn').addEventListener('click',()=>$('sheet').classList.add('on'));
+// ---------- map ----------
+var map,mapLayer,mapTmp,mapPt;
+function tileLayer(){const dark=document.documentElement.getAttribute('data-theme')!=='light';return L.tileLayer(`https://{s}.basemaps.cartocdn.com/${dark?'dark_all':'light_all'}/{z}/{x}/{y}{r}.png`,{maxZoom:18,subdomains:'abcd',attribution:'© OpenStreetMap contributors © CARTO'})}
+function renderMap(){
+  const el=$('map');if(!window.L){el.innerHTML='<p class="note" style="padding:12px">Map library did not load (offline?).</p>';return}
+  if(!map){map=L.map(el,{zoomControl:true,attributionControl:true});map._tiles=tileLayer().addTo(map);mapLayer=L.layerGroup().addTo(map);
+    map.on('click',e=>{mapPt=e.latlng;if(mapTmp)mapTmp.remove();mapTmp=L.circleMarker(e.latlng,{radius:7,color:'#ffb000',fillColor:'#000',fillOpacity:1,weight:2,dashArray:'3 3'}).addTo(map);$('mapBarTxt').textContent=`${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)} · ${distNm(V(),{lat:e.latlng.lat,lon:e.latlng.lng}).toFixed(1)} nm from ${V().name}`;$('mapBar').hidden=false})}
+  mapLayer.clearLayers();const v=V();
+  const Rm=radiusNm()*NM*1000;
+  L.circle([v.lat,v.lon],{radius:Rm,color:'#ffb000',weight:1,dashArray:'4 4',fill:false,opacity:.7}).addTo(mapLayer);
+  L.circleMarker([v.lat,v.lon],{radius:8,color:'#000',weight:2,fillColor:'#ffb000',fillOpacity:1}).addTo(mapLayer).bindPopup(`<b>${v.name}</b><br>Forecast point · ${v.lat.toFixed(4)}, ${v.lon.toFixed(4)}<br>Six models, ensembles and modelled tide are computed here.`);
+  if(v.tide&&(v.tide.lat!==v.lat||v.tide.lon!==v.lon))L.circleMarker([v.tide.lat,v.tide.lon],{radius:5,color:'#27c3f3',weight:1.5,fillColor:'#000',fillOpacity:1}).addTo(mapLayer).bindPopup(`<b>Tide model point</b><br>Open-Meteo marine model sampled here (open water).`);
+  const pk=stationKey();
+  Object.keys(STATIONS).forEach(k=>{const S=STATIONS[k];const Lt=latest(k);const plotted=k===pk;
+    const m=L.circleMarker([S.lat,S.lon],{radius:plotted?8:6,color:'#000',weight:1.5,fillColor:plotted?'#ffffff':'#8a949e',fillOpacity:1}).addTo(mapLayer);
+    m.bindPopup(`<b>${S.name}</b><br>${S.note}${Lt?`<br>${comp(Lt.dir)} ${Lt.spd.toFixed(0)} kn · gust ${Lt.gst.toFixed(0)} · ${Lt.dir.toFixed(0)}° · ${fmtT(Lt.t)}`:'<br>no recent reading'}${plotted?'<br><span style="color:var(--good)">plotted on the Now chart</span>':`<br><span class="pl" data-st="${k}">Plot this station ▸</span>`}`)});
+  const g=(hhaTide&&hhaTide.length&&v.hha)?{lat:51.9480,lon:1.2921,name:'Harwich tide gauge'}:eaGauge?{lat:eaGauge.lat,lon:eaGauge.lon,name:eaGauge.name+' tide gauge'}:null;
+  if(g)L.circleMarker([g.lat,g.lon],{radius:6,color:'#000',weight:1.5,fillColor:'#27c3f3',fillOpacity:1}).addTo(mapLayer).bindPopup(`<b>${g.name}</b><br>Observed tide level`);
+  const b=L.latLngBounds([[v.lat,v.lon]]);b.extend(L.latLng(v.lat,v.lon).toBounds(Rm*2.2));map.fitBounds(b,{padding:[10,10]});
+  $('mapTag').textContent=`${Object.keys(STATIONS).length} station${Object.keys(STATIONS).length===1?'':'s'} · radius ${radiusNm()} nm`;
+  setTimeout(()=>map.invalidateSize(),50);
+  map.off('popupopen');map.on('popupopen',e=>{const el2=e.popup.getElement();const pl=el2&&el2.querySelector('.pl');if(pl)pl.addEventListener('click',()=>{store.station=pl.dataset.st;save();$('station').value=store.station;map.closePopup();render();renderMap()})});
+}
+$('mapUse').addEventListener('click',()=>{if(!mapPt)return;const id='v'+Date.now().toString(36);store.venues=(store.venues||[]).concat([{id,name:`Map point ${mapPt.lat.toFixed(3)}, ${mapPt.lng.toFixed(3)}`,sub:'set on the map',lat:mapPt.lat,lon:mapPt.lng}]);store.venueId=id;save();$('mapBar').hidden=true;if(mapTmp){mapTmp.remove();mapTmp=null}switchVenue()});
+$('mapCancel').addEventListener('click',()=>{$('mapBar').hidden=true;if(mapTmp){mapTmp.remove();mapTmp=null}});
 function venueLabel(){const v=V();$('venueBtn').textContent=v.name+(v.sub?' · '+v.sub:'')}
 function renderVenueList(){const cur=V().id;$('vlist').innerHTML=allVenues().map(v=>`<button type="button" data-id="${v.id}" class="${v.id===cur?'cur':''}"><span>${v.name}<br><small>${v.sub||''} · ${v.lat.toFixed(3)}, ${v.lon.toFixed(3)}</small></span>${VENUES_BUILTIN.some(b=>b.id===v.id)?'':'<small data-del="'+v.id+'">remove</small>'}</button>`).join('');
   $('vlist').querySelectorAll('button').forEach(b=>b.addEventListener('click',e=>{const del=e.target.getAttribute('data-del');if(del){store.venues=(store.venues||[]).filter(v=>v.id!==del);if(store.venueId===del)store.venueId='levington';save();switchVenue();return}store.venueId=b.dataset.id;save();switchVenue()}))}
