@@ -160,7 +160,7 @@ a{color:var(--accent)}
 footer{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.6;padding-top:14px}
 /* bottom tabs */
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:9;background:var(--bg);border-top:1px solid var(--line);display:flex;padding:6px max(16px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
-.tab{flex:1;background:none;border:0;color:var(--ink-3);font:700 11px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;padding:10px 0 8px;display:grid;gap:6px;justify-items:center;border-radius:0}
+.tab{flex:1;background:none;border:0;color:var(--ink-3);font:700 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:10px 0 8px;display:grid;gap:6px;justify-items:center;border-radius:0}
 .tab i{display:block;width:22px;height:3px;background:var(--line)}
 #map{height:calc(100vh - 310px);min-height:320px;background:#0b0d10;border:1px solid var(--line)}
 .leaflet-container{background:#0b0d10;font-family:var(--body)}
@@ -236,11 +236,25 @@ footer{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.
       <span><i class="band"></i>Ensemble 10–90</span>
       <span><i class="obs"></i>Observed</span>
       <span><i style="background:var(--tide)"></i>Tide · twelfths</span>
-      <span><i style="background:var(--temp)"></i>Air °C</span>
       <label><input type="checkbox" id="showEns" checked> ens</label>
       <label><input type="checkbox" id="showSpread"> models</label>
     </div>
-    <div class="caption">Pinch or scroll to zoom, drag to pan, tap for a readout. Top: wind and gust, kn. Middle: direction, race consensus as the centre line, up = veer. Then air temperature (green = consensus, white = observed). Bottom: tide height, each hour after a turn shaded by its twelfth, darker = faster; knots are the estimated stream at the course (Settings).</div>
+    <div class="caption">Pinch or scroll to zoom, drag to pan, tap for a readout. Top: wind and gust, kn. Middle: direction, race consensus as the centre line, up = veer. Bottom: tide height, each hour after a turn shaded by its twelfth, darker = faster; knots are the estimated stream at the course (Settings).</div>
+  </main>
+
+  <!-- PAGE: SKY -->
+  <main class="page wide" id="pgSky">
+    <section class="sec brief" id="skyBrief"></section>
+    <section class="sec">
+      <h2>Race day<span class="tag">Temperature · Rain · Cloud · Pressure</span></h2>
+      <div class="chartBox" id="skyChart"></div>
+      <div class="legend"><span><i style="background:var(--temp);height:3px"></i><b>Air °C</b></span><span><i style="background:var(--ink-3);height:3px"></i>Feels like</span><span><i style="background:var(--obs)"></i>Observed</span><span><i style="background:var(--tide);height:8px"></i>Rain mm/h</span><span><i class="dash" style="background:repeating-linear-gradient(90deg,var(--tide) 0 4px,transparent 4px 7px)"></i>Chance %</span><span><i style="background:var(--ink-2);height:8px;opacity:.5"></i>Cloud</span><span><i style="background:var(--accent);height:2px"></i>Pressure</span></div>
+      <div class="caption">Forecast from Open-Meteo's best-match model for this point; temperature line is the six-model consensus where it differs. Observed temperature and pressure from the plotted station when the race is today. Race window shaded.</div>
+    </section>
+    <section class="sec">
+      <h2>Hour by hour<span class="tag">Race window</span></h2>
+      <div class="tableWrap"><table id="skyTable"></table></div>
+    </section>
   </main>
 
   <!-- PAGE: CONDITIONS -->
@@ -266,7 +280,7 @@ footer{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.
     <section class="sec">
       <h2>Now<span class="tag" id="accTag">Observed vs consensus · ±6 h</span></h2>
       <div class="chartBox" id="liveChart"></div>
-      <div class="legend"><span><i class="obs"></i><b>Observed</b></span><span><i style="height:1px;border-top:1px dotted var(--obs);background:none"></i>Obs gust</span><span><i style="background:var(--ink-2)"></i>Nearest other station</span><span><i style="background:var(--accent);height:3px"></i>Consensus</span><span><i class="dash"></i>Consensus gust</span><span><i style="background:var(--temp)"></i>Air °C</span></div>
+      <div class="legend"><span><i class="obs"></i><b>Observed</b></span><span><i style="height:1px;border-top:1px dotted var(--obs);background:none"></i>Obs gust</span><span><i style="background:var(--ink-2)"></i>Nearest other station</span><span><i style="background:var(--accent);height:3px"></i>Consensus</span><span><i class="dash"></i>Consensus gust</span></div>
       <div class="caption" id="accCap">Left of the line: the last 6 hours, station readings against what the consensus said. Right: the next 6 hours of consensus forecast. Accuracy = 100% minus the typical miss as a share of the observed wind (speed) or of 90° (direction).</div>
     </section>
     <section class="sec">
@@ -294,7 +308,7 @@ footer{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.
       <div class="tableWrap"><table id="modelTable"></table></div>
       <div class="caption" id="tableCap"></div>
     </section>
-    <footer>Forecasts: Open-Meteo (CC BY 4.0) serving ECMWF, NOAA GFS, DWD ICON, UK Met Office, Météo-France and KNMI, plus ECMWF (51) and GEFS (31) ensembles. Live observations and tide predictions: Harwich Haven Authority (hha.co.uk), heights above Harwich chart datum; Open-Meteo marine model (MSL) as fallback. Tide size: predicted range against Harwich springs 3.6 m / neaps 2.3 m. Windy, XC Weather, BBC and PredictWind draw on these same models. GO FAST · WIN RACE v2.3 beta · venues, airport observations and EA tide gauges are new; Levington keeps its Harwich Haven feeds.</footer>
+    <footer>Forecasts: Open-Meteo (CC BY 4.0) serving ECMWF, NOAA GFS, DWD ICON, UK Met Office, Météo-France and KNMI, plus ECMWF (51) and GEFS (31) ensembles. Live observations and tide predictions: Harwich Haven Authority (hha.co.uk), heights above Harwich chart datum; Open-Meteo marine model (MSL) as fallback. Tide size: predicted range against Harwich springs 3.6 m / neaps 2.3 m. Windy, XC Weather, BBC and PredictWind draw on these same models. GO FAST · WIN RACE v2.4 beta · venues, airport observations and EA tide gauges are new; Levington keeps its Harwich Haven feeds.</footer>
   </main>
 
   <!-- PAGE: MAP -->
@@ -309,7 +323,8 @@ footer{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.
   <nav class="tabs" aria-label="Pages">
     <button class="tab on" data-page="pgRace" type="button"><i></i>Race</button>
     <button class="tab" data-page="pgTrace" type="button"><i></i>Trace</button>
-    <button class="tab" data-page="pgCond" type="button"><i></i>Conditions</button>
+    <button class="tab" data-page="pgSky" type="button"><i></i>Sky</button>
+    <button class="tab" data-page="pgCond" type="button"><i></i>Brief</button>
     <button class="tab" data-page="pgLive" type="button"><i></i>Live</button>
     <button class="tab" data-page="pgMap" type="button"><i></i>Map</button>
   </nav>
@@ -416,7 +431,7 @@ let store={};try{store=JSON.parse(localStorage.getItem('lrw')||'{}')}catch(e){st
 const save=()=>{try{localStorage.setItem('lrw',JSON.stringify(store))}catch(e){}};
 
 // ---------- state ----------
-let wind=null,ens=null,omTide=null,hhaPred=null,hhaTide=null,live={},view=null,eaGauge=null;
+let wind=null,ens=null,omTide=null,hhaPred=null,hhaTide=null,live={},view=null,eaGauge=null,sky=null;
 const today=new Date();today.setHours(0,0,0,0);
 const dateEl=$('date'),startEl=$('start'),endEl=$('end');
 [startEl,endEl].forEach(sel=>{for(let q=0;q<=96;q++){const o=document.createElement('option');o.value=q;o.textContent=hm(q);sel.appendChild(o)}});startEl.value=38;endEl.value=52;
@@ -455,6 +470,8 @@ async function load(){
       if(j.error)throw new Error(j.reason);const h=j.hourly;const t0=parseLocal(h.time[0]);
       const ms=MODELS.map(m=>{const sfx=k=>h[k+'_'+m.id]||(Object.keys(h).some(x=>x.endsWith('_'+m.id))?null:h[k]);return {...m,spd:sfx('wind_speed_10m'),dir:sfx('wind_direction_10m'),gst:sfx('wind_gusts_10m'),tmp:sfx('temperature_2m')}}).filter(m=>m.spd&&m.dir&&m.spd.some(v=>v!=null));
       wind={t0,n:h.time.length,models:ms};msgs.push(`${ms.length}/${MODELS.length} models`)}).catch(e=>{wind=null;msgs.push('models failed: '+e.message)}),
+    getJSON(`https://api.open-meteo.com/v1/forecast?latitude=${LOC.lat}&longitude=${LOC.lon}&hourly=temperature_2m,apparent_temperature,precipitation,precipitation_probability,cloud_cover,weather_code,pressure_msl,visibility,relative_humidity_2m&past_days=1&forecast_days=7&timezone=Europe%2FLondon`).then(j=>{
+      if(j.error)throw new Error(j.reason);const hh=j.hourly;sky={t0:parseLocal(hh.time[0]),n:hh.time.length,temp:hh.temperature_2m,feel:hh.apparent_temperature,rain:hh.precipitation,pop:hh.precipitation_probability,cloud:hh.cloud_cover,code:hh.weather_code,pres:hh.pressure_msl,vis:hh.visibility,rh:hh.relative_humidity_2m}}).catch(e=>{sky=null;msgs.push('sky failed')}),
     getJSON(`https://ensemble-api.open-meteo.com/v1/ensemble?latitude=${LOC.lat}&longitude=${LOC.lon}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kn&models=ecmwf_ifs025,gfs025&forecast_days=7&timezone=Europe%2FLondon`).then(j=>{
       if(j.error)throw new Error(j.reason);const h=j.hourly;const keys=Object.keys(h);const spd=[],dir=[],gst=[];
       keys.forEach(k=>{if(k.startsWith('wind_speed_10m'))spd.push(h[k]);else if(k.startsWith('wind_direction_10m'))dir.push(h[k]);else if(k.startsWith('wind_gusts_10m'))gst.push(h[k])});
@@ -593,14 +610,14 @@ function shifts(st){ // consensus direction shifts across the day, with model ti
 function render(){
   syncSliders();
   const st=windowStats();const errs=[];
-  [['brief',()=>renderBrief(st)],['tiles',()=>renderTiles(st)],['live',()=>renderLive()],['liveChart',()=>renderLiveChart(st)],['timeline',()=>renderTimeline(st)],['shifts',()=>renderShifts(st)],['compass',()=>renderCompass(st)],['speedbar',()=>renderSpeed(st)],['modelTable',()=>renderTable(st)],['streamNote',()=>renderStreamNote(st)]].forEach(([id,fn])=>{try{fn()}catch(e){errs.push(id+': '+(e&&e.message||e));const el=$(id);if(el)el.innerHTML=`<p class="err">This panel hit an error (${(e&&e.message||e)}). Pull to refresh; if it persists, send this message to Claude.</p>`}});
+  [['brief',()=>renderBrief(st)],['tiles',()=>renderTiles(st)],['live',()=>renderLive()],['liveChart',()=>renderLiveChart(st)],['timeline',()=>renderTimeline(st)],['shifts',()=>renderShifts(st)],['compass',()=>renderCompass(st)],['speedbar',()=>renderSpeed(st)],['modelTable',()=>renderTable(st)],['streamNote',()=>renderStreamNote(st)],['skyBrief',()=>renderSkyBrief(st)],['skyChart',()=>renderSky(st)]].forEach(([id,fn])=>{try{fn()}catch(e){errs.push(id+': '+(e&&e.message||e));const el=$(id);if(el)el.innerHTML=`<p class="err">This panel hit an error (${(e&&e.message||e)}). Pull to refresh; if it persists, send this message to Claude.</p>`}});
   if(errs.length)console.error('render errors',errs);
   if(map&&$('pgMap').classList.contains('on')){try{renderMap()}catch(e){console.error(e)}}
 }
 function renderLiveChart(st){
   const el=$('liveChart'),tag=$('accTag');if(!wind){el.innerHTML='<p class="caption">Waiting for forecast…</p>';return}
   const now=Date.now();const a=now-6*36e5,b=now+6*36e5;
-  const W=Math.max(320,el.clientWidth||Math.min(1068,window.innerWidth-32)),ml=34,mr=14,mt=22,sh=Math.max(150,Math.min(220,W*0.3)),gap=22,dh=90,tph=54,mb=24;const H=mt+sh+gap+dh+gap+tph+mb,pw=W-ml-mr;
+  const W=Math.max(320,el.clientWidth||Math.min(1068,window.innerWidth-32)),ml=34,mr=14,mt=22,sh=Math.max(150,Math.min(220,W*0.3)),gap=22,dh=90,mb=24;const H=mt+sh+gap+dh+mb,pw=W-ml-mr;
   const X=t=>ml+pw*(t-a)/(b-a);
   const cons=[];for(let t=a;t<=b;t+=9e5){const c=consensusAt(t);if(c)cons.push(c)}
   const obsAll=obsSeries()||[];const obs=obsAll.filter(p=>p.t>=a&&p.t<=now);
@@ -609,9 +626,9 @@ function renderLiveChart(st){
   const Y=k=>mt+sh*(1-k/maxK);
   let s=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Observed wind against consensus, last six hours and next six">`;
   // race window
-  const bottomY=mt+sh+gap+dh+gap+tph;
+  const bottomY=mt+sh+gap+dh;
   if(st&&st.tE>a&&st.tS<b){const x0=X(Math.max(st.tS,a)),x1=X(Math.min(st.tE,b));s+=`<rect x="${x0}" y="${mt-14}" width="${x1-x0}" height="${bottomY-mt+14}" fill="var(--window)"/>`;
-    const ly=mt+sh+gap+dh+gap+tph-6;if(x1-x0<150)s+=`<text class="tl-lbl" x="${(x0+x1)/2}" y="${ly}" font-size="12" fill="var(--ink)" text-anchor="middle">Race ${fmtT(st.tS)}–${fmtT(st.tE)}</text>`;
+    const ly=mt+sh+gap+dh-6;if(x1-x0<150)s+=`<text class="tl-lbl" x="${(x0+x1)/2}" y="${ly}" font-size="12" fill="var(--ink)" text-anchor="middle">Race ${fmtT(st.tS)}–${fmtT(st.tE)}</text>`;
     else{if(st.tS>=a&&st.tS<=b)s+=`<text class="tl-lbl" x="${X(st.tS)+4}" y="${ly}" font-size="12" fill="var(--ink)">Start ${fmtT(st.tS)}</text>`;
     if(st.tE>=a&&st.tE<=b)s+=`<text class="tl-lbl" x="${X(st.tE)-4}" y="${ly}" font-size="12" fill="var(--ink)" text-anchor="end">Finish ${fmtT(st.tE)}</text>`}}
   // grid
@@ -637,14 +654,6 @@ function renderLiveChart(st){
   if(mo&&mo.dir!=null&&mo.t>=a&&mo.t<=b)s+=`<circle cx="${X(mo.t)}" cy="${DY(Math.max(-span,Math.min(span,offset(mo.dir,cen))))}" r="5" fill="var(--bg)" stroke="var(--obs)" stroke-width="2"/>`;
   for(let t=t0;t<=b;t+=lstep){const c=consensusAt(t);if(!c||c.dir==null||X(t)<ml+18)continue;s+=`<text class="tl-lbl" x="${X(t)}" y="${DY(offset(c.dir,cen))-7}" text-anchor="middle" font-size="11" fill="var(--ink)">${c.dir.toFixed(0)}°</text>`}
   s+=`<text x="${W-mr}" y="${dy0-6}" text-anchor="end" font-size="9.5" fill="var(--ink-3)" font-family="var(--mono)">DIR · UP = VEER</text>`;
-  // temperature strip
-  {const tpy0=dy0+dh+gap;const tv=cons.filter(c=>c.tmp!=null);const ot=obs.filter(p=>p.temp!=null);
-   if(tv.length||ot.length){const all=tv.map(c=>c.tmp).concat(ot.map(p=>p.temp));const lo=Math.floor(Math.min(...all)-1),hi=Math.ceil(Math.max(...all)+1);const TY=v=>tpy0+tph*(1-(v-lo)/(hi-lo));
-    s+=`<text x="${W-mr}" y="${tpy0-6}" text-anchor="end" font-size="9.5" fill="var(--ink-3)" font-family="var(--mono)">AIR °C</text><text x="${ml-6}" y="${tpy0+9}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${hi}</text><text x="${ml-6}" y="${tpy0+tph}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${lo}</text>`;
-    if(tv.length>1)s+=`<path d="${tv.map((c,i)=>(i?'L':'M')+X(c.t).toFixed(1)+','+TY(c.tmp).toFixed(1)).join('')}" fill="none" stroke="var(--temp)" stroke-width="2.2"/>`;
-    if(ot.length>1)s+=`<path d="${ot.map((p,i)=>(i?'L':'M')+X(p.t).toFixed(1)+','+TY(p.temp).toFixed(1)).join('')}" fill="none" stroke="var(--obs)" stroke-width="2"/>`;
-    const lastO=ot[ot.length-1];if(lastO)s+=`<text class="tl-lbl" x="${X(lastO.t)-6}" y="${TY(lastO.temp)+4}" text-anchor="end" font-size="12" fill="var(--obs)">${lastO.temp.toFixed(1)}°</text>`;
-    const lastC=tv[tv.length-1];if(lastC)s+=`<text class="tl-lbl" x="${X(lastC.t)-4}" y="${TY(lastC.tmp)-6}" text-anchor="end" font-size="12" fill="var(--ink)">${lastC.tmp.toFixed(0)}°</text>`}}
   // now line
   s+=`<line x1="${X(now)}" y1="${mt-14}" x2="${X(now)}" y2="${bottomY}" stroke="var(--obs)" stroke-width="1.5"/><text class="tl-lbl" x="${X(now)}" y="${mt-4}" text-anchor="middle" font-size="12" fill="var(--obs)">NOW ${fmtT(now)}</text>`;
   s+=`<text x="${ml+2}" y="${mt+12}" font-family="var(--mono)" font-size="9.5" fill="var(--ink-3)" letter-spacing="2">OBSERVED · PAST 6 H</text><text x="${W-mr}" y="${mt+12}" text-anchor="end" font-family="var(--mono)" font-size="9.5" fill="var(--ink-3)" letter-spacing="2">FORECAST · NEXT 6 H</text>`;
@@ -658,6 +667,73 @@ function renderLiveChart(st){
     const sk=secondaryKey();const L2=sk?latest(sk):null;const others=L2?`${STATIONS[sk].name} ${L2.spd.toFixed(0)} kn ${comp(L2.dir)}`:'';
     $('accCap').innerHTML=`<b>${stn}</b> is the bold trace${$('station').value==='upwind'?' (most upwind for the forecast direction)':$('station').value==='auto'||!$('station').value?' (nearest station)':''}${others?'; thin grey line: '+others:''}.<br>Last 6 h against ${stn}: consensus ran ${v.cons.s>=0?'+':''}${v.cons.s.toFixed(1)} kn (typical miss ${v.cons.mae.toFixed(1)} kn)${v.cons.d!=null?`, ${Math.abs(v.cons.d).toFixed(0)}° ${v.cons.d>=0?'right':'left'}`:''} over ${v.n} readings. Right of the line is the consensus forecast for the next 6 hours${st&&st.tE>now&&st.tS<b?', race window shaded':''}.`}
   else{tag.textContent='Observed vs consensus · ±6 h';$('accCap').textContent=relayURL()?(pk0?'Accuracy appears once an hour or so of station readings has built up.':`No live wind station within ${radiusNm()} nm; the chart shows the consensus forecast only. Tap the venue name to widen the radius.`):'Set the relay URL in Settings to add the observed trace and the accuracy score; the right half is the consensus forecast for the next 6 hours.'}
+}
+
+// ---------- sky (temperature, rain, cloud, pressure) ----------
+const WMO={0:'clear',1:'mainly clear',2:'partly cloudy',3:'overcast',45:'fog',48:'freezing fog',51:'light drizzle',53:'drizzle',55:'heavy drizzle',56:'freezing drizzle',57:'freezing drizzle',61:'light rain',63:'rain',65:'heavy rain',66:'freezing rain',67:'freezing rain',71:'light snow',73:'snow',75:'heavy snow',77:'snow grains',80:'light showers',81:'showers',82:'heavy showers',85:'snow showers',86:'heavy snow showers',95:'thunderstorms',96:'thunder with hail',99:'thunder with heavy hail'};
+function skyAt(t){if(!sky)return null;const x=hrs(t,sky.t0);if(x<0||x>sky.n-1)return null;const i=Math.round(x);const g=k=>sky[k]?sky[k][i]:null;const c=consensusAt(t);
+  return {t,temp:c&&c.tmp!=null?c.tmp:interp(sky.temp,x),feel:interp(sky.feel,x),rain:g('rain'),pop:g('pop'),cloud:interp(sky.cloud,x),code:g('code'),pres:interp(sky.pres,x),vis:g('vis'),rh:interp(sky.rh,x)}}
+function renderSkyBrief(st){
+  const el=$('skyBrief');if(!st||st.none||!sky){el.innerHTML='<h2>Sky over the race</h2><p>'+(sky?'No forecast for that window yet.':'Waiting for the weather forecast…')+'</p>';return}
+  const pts=[];for(let t=st.tS;t<=st.tE;t+=36e5){const p=skyAt(t);if(p)pts.push(p)}if(!pts.length){el.innerHTML='<h2>Sky over the race</h2><p>No forecast for that window yet.</p>';return}
+  const temps=pts.map(p=>p.temp).filter(v=>v!=null),feels=pts.map(p=>p.feel).filter(v=>v!=null);
+  const rainTot=pts.reduce((m,p)=>m+(p.rain||0),0),popMax=Math.max(...pts.map(p=>p.pop??0)),cloudAv=mean(pts.map(p=>p.cloud??0));
+  const codes=pts.map(p=>p.code).filter(v=>v!=null);const worst=codes.length?Math.max(...codes):null;const commonest=codes.length?codes.sort((a,b)=>codes.filter(v=>v===a).length-codes.filter(v=>v===b).length).pop():null;
+  const p0=pts[0],p1=pts[pts.length-1];const dp=(p1.pres!=null&&p0.pres!=null)?p1.pres-p0.pres:null;
+  const sunny=cloudAv<35,grey=cloudAv>75;
+  let s1=`<b>${(WMO[commonest]||'variable').replace(/^./,c=>c.toUpperCase())}</b>${worst!=null&&worst!==commonest&&worst>=51?`, with ${WMO[worst]} possible`:''}`;
+  s1+=`; cloud ${cloudAv.toFixed(0)}% ${sunny?'(mostly sunny)':grey?'(grey)':'(mixed)'}.`;
+  if(rainTot>=0.2||popMax>=40)s1+=` Rain: ${popMax.toFixed(0)}% chance, about ${rainTot.toFixed(1)} mm over the race${rainTot>=3?', wet-weather gear':rainTot>=1?', a jacket':''}.`;else s1+=' Dry, rain unlikely.';
+  let s2=`<b>${Math.min(...temps).toFixed(0)}–${Math.max(...temps).toFixed(0)} °C</b>`;if(feels.length){const f=Math.min(...feels);if(f<Math.min(...temps)-2)s2+=`, feeling like ${f.toFixed(0)} °C in the breeze`}s2+='.';
+  const fog=codes.some(c=>c===45||c===48);const visMin=Math.min(...pts.map(p=>p.vis??99999));
+  s2+=fog||visMin<4000?` Visibility poor at times (${(visMin/1000).toFixed(1)} km)${fog?', fog':''}.`:visMin<10000?` Visibility moderate (${(visMin/1000).toFixed(0)} km).`:' Visibility good.';
+  let s3=p0.pres!=null?`Pressure ${p0.pres.toFixed(0)} hPa${dp!=null?(Math.abs(dp)<1?', steady':dp>0?`, rising ${dp.toFixed(1)}`:`, falling ${Math.abs(dp).toFixed(1)}`):''}${dp!=null&&dp<=-3?' – a front or trough coming through, expect the wind to shift':''}.`:'';
+  const isToday=localDate(dateEl.value).getTime()===today.getTime();const pk=stationKey();const L=isToday&&pk?latest(pk):null;
+  if(L&&L.temp!=null){const c=skyAt(Date.now());if(c&&c.temp!=null){const d=L.temp-c.temp;s3+=` ${STATIONS[pk].name} reads ${L.temp.toFixed(1)} °C now, ${Math.abs(d)<1.5?'in line with the forecast':`${Math.abs(d).toFixed(1)} °C ${d>0?'warmer':'colder'} than forecast`}${d>=2.5&&sunny?'; a sea breeze is more likely this afternoon':''}.`}}
+  el.innerHTML=`<h2>Sky over the race<span class="tag">${fmtT(st.tS)}–${fmtT(st.tE)}</span></h2><p>${s1}</p><p>${s2}</p>${s3?`<p>${s3}</p>`:''}`;
+}
+function renderSky(st){
+  const el=$('skyChart'),tb=$('skyTable');if(!sky||!st){el.innerHTML='<p class="caption">Waiting for the weather forecast…</p>';tb.innerHTML='';return}
+  const {d0,d1}=dayBounds();const a=d0,b=d1;
+  const W=Math.max(320,el.clientWidth||Math.min(1068,window.innerWidth-32)),ml=36,mr=36,mt=20,th=Math.max(130,Math.min(190,W*0.26)),gap=22,rh=90,ph=70,mb=26;const H=mt+th+gap+rh+gap+ph+mb,pw=W-ml-mr;
+  const X=t=>ml+pw*(t-a)/(b-a);
+  const pts=[];for(let t=a;t<=b;t+=36e5){const p=skyAt(t);if(p)pts.push(p)}
+  const isToday=localDate(dateEl.value).getTime()===today.getTime();const pk=stationKey();const S=isToday&&pk?STATIONS[pk]:null;const obsT=S?S.series.filter(r=>r.temp!=null&&r.t>=a&&r.t<=b):[];const obsP=S?S.series.filter(r=>r.p!=null&&r.t>=a&&r.t<=b):[];
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Temperature, rain, cloud and pressure for the race day">`;
+  const bottom=mt+th+gap+rh+gap+ph;
+  s+=`<rect x="${X(st.tS)}" y="${mt-10}" width="${Math.max(0,X(st.tE)-X(st.tS))}" height="${bottom-mt+10}" fill="var(--window)"/>`;
+  const lstep=(pw/24>=40?2:3)*36e5;for(let t=a;t<=b;t+=lstep){s+=`<line x1="${X(t)}" y1="${mt}" x2="${X(t)}" y2="${bottom}" stroke="var(--line-2)"/><text x="${X(t)}" y="${H-mb+16}" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--ink-2)">${fmtT(t)}</text>`}
+  if(pts.length){
+    // temperature panel
+    const temps=pts.map(p=>p.temp).concat(pts.map(p=>p.feel)).concat(obsT.map(r=>r.temp)).filter(v=>v!=null);const lo=Math.floor(Math.min(...temps)-1),hi=Math.ceil(Math.max(...temps)+1);const TY=v=>mt+th*(1-(v-lo)/(hi-lo));
+    for(let v=lo;v<=hi;v+=(hi-lo>12?5:2)){s+=`<line x1="${ml}" y1="${TY(v)}" x2="${W-mr}" y2="${TY(v)}" stroke="var(--line-2)"/><text x="${ml-6}" y="${TY(v)+4}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${v}°</text>`}
+    // cloud shading along the top of temp panel
+    pts.forEach((p,i)=>{if(p.cloud==null)return;const x0=X(p.t-18e5),x1=X(p.t+18e5);s+=`<rect x="${Math.max(ml,x0)}" y="${mt}" width="${Math.max(0,Math.min(W-mr,x1)-Math.max(ml,x0))}" height="10" fill="var(--ink-2)" fill-opacity="${(p.cloud/100*0.6).toFixed(2)}"/>`});
+    s+=`<text x="${W-mr}" y="${mt-3}" text-anchor="end" font-family="var(--mono)" font-size="9" fill="var(--ink-3)">CLOUD ↑ · AIR °C</text>`;
+    const fp=pts.filter(p=>p.feel!=null);if(fp.length>1)s+=`<path d="${fp.map((p,i)=>(i?'L':'M')+X(p.t).toFixed(1)+','+TY(p.feel).toFixed(1)).join('')}" fill="none" stroke="var(--ink-3)" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+    const tp=pts.filter(p=>p.temp!=null);s+=`<path d="${tp.map((p,i)=>(i?'L':'M')+X(p.t).toFixed(1)+','+TY(p.temp).toFixed(1)).join('')}" fill="none" stroke="var(--temp)" stroke-width="3" stroke-linejoin="round"/>`;
+    if(obsT.length>1)s+=`<path d="${obsT.map((r,i)=>(i?'L':'M')+X(r.t).toFixed(1)+','+TY(r.temp).toFixed(1)).join('')}" fill="none" stroke="var(--obs)" stroke-width="2"/>`;
+    for(let t=a;t<=b;t+=lstep){const p=skyAt(t);if(!p||p.temp==null||X(t)<ml+16)continue;s+=`<text class="tl-lbl" x="${X(t)}" y="${TY(p.temp)-8}" text-anchor="middle" font-size="14" fill="var(--ink)">${p.temp.toFixed(0)}°</text>`}
+    // rain panel
+    const ry0=mt+th+gap;const rmax=Math.max(1,Math.ceil(Math.max(...pts.map(p=>p.rain||0))*1.2));const RY=v=>ry0+rh*(1-v/rmax);const PY=v=>ry0+rh*(1-v/100);
+    s+=`<line x1="${ml}" y1="${ry0+rh}" x2="${W-mr}" y2="${ry0+rh}" stroke="var(--line)"/><text x="${ml-6}" y="${ry0+10}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${rmax}</text><text x="${ml-6}" y="${ry0+rh}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">0</text><text x="${ml-6}" y="${ry0+rh/2+4}" text-anchor="end" font-family="var(--mono)" font-size="9" fill="var(--ink-3)">mm</text>`;
+    s+=`<text x="${W-mr+6}" y="${ry0+10}" font-family="var(--mono)" font-size="10" fill="var(--tide)">100%</text><text x="${W-mr+6}" y="${ry0+rh}" font-family="var(--mono)" font-size="10" fill="var(--tide)">0</text>`;
+    pts.forEach(p=>{if(!p.rain)return;const x0=X(p.t-18e5)+1,w=Math.max(2,X(p.t+18e5)-X(p.t-18e5)-2);s+=`<rect x="${x0}" y="${RY(p.rain)}" width="${w}" height="${ry0+rh-RY(p.rain)}" fill="var(--tide)" fill-opacity=".55"/>`});
+    const pp=pts.filter(p=>p.pop!=null);if(pp.length>1)s+=`<path d="${pp.map((p,i)=>(i?'L':'M')+X(p.t).toFixed(1)+','+PY(p.pop).toFixed(1)).join('')}" fill="none" stroke="var(--tide)" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+    s+=`<text x="${W-mr}" y="${ry0-4}" text-anchor="end" font-family="var(--mono)" font-size="9" fill="var(--ink-3)">RAIN mm/h · CHANCE %</text>`;
+    // pressure panel
+    const py0=ry0+rh+gap;const pres=pts.map(p=>p.pres).concat(obsP.map(r=>r.p)).filter(v=>v!=null);if(pres.length){const plo=Math.floor(Math.min(...pres)-1),phi=Math.ceil(Math.max(...pres)+1);const QY=v=>py0+ph*(1-(v-plo)/(phi-plo));
+      s+=`<line x1="${ml}" y1="${py0+ph}" x2="${W-mr}" y2="${py0+ph}" stroke="var(--line)"/><text x="${ml-6}" y="${py0+10}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${phi}</text><text x="${ml-6}" y="${py0+ph}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${plo}</text><text x="${W-mr}" y="${py0-4}" text-anchor="end" font-family="var(--mono)" font-size="9" fill="var(--ink-3)">PRESSURE hPa</text>`;
+      const prp=pts.filter(p=>p.pres!=null);s+=`<path d="${prp.map((p,i)=>(i?'L':'M')+X(p.t).toFixed(1)+','+QY(p.pres).toFixed(1)).join('')}" fill="none" stroke="var(--accent)" stroke-width="2"/>`;
+      if(obsP.length>1)s+=`<path d="${obsP.map((r,i)=>(i?'L':'M')+X(r.t).toFixed(1)+','+QY(r.p).toFixed(1)).join('')}" fill="none" stroke="var(--obs)" stroke-width="2"/>`}
+    [[st.tS,'Start'],[st.tE,'Finish']].forEach(([t,l])=>{s+=`<line x1="${X(t)}" y1="${mt-10}" x2="${X(t)}" y2="${bottom}" stroke="var(--ink-2)" stroke-dasharray="3 3"/>`});
+    const tight=(X(st.tE)-X(st.tS))<150;if(tight)s+=`<text class="tl-lbl" x="${(X(st.tS)+X(st.tE))/2}" y="${mt-12}" text-anchor="middle" font-size="12" fill="var(--ink)">Race ${fmtT(st.tS)}–${fmtT(st.tE)}</text>`;else{s+=`<text class="tl-lbl" x="${X(st.tS)+4}" y="${mt-12}" font-size="12" fill="var(--ink)">Start ${fmtT(st.tS)}</text><text class="tl-lbl" x="${X(st.tE)-4}" y="${mt-12}" text-anchor="end" font-size="12" fill="var(--ink)">Finish ${fmtT(st.tE)}</text>`}
+    const now=Date.now();if(now>=a&&now<=b)s+=`<line x1="${X(now)}" y1="${mt-10}" x2="${X(now)}" y2="${bottom}" stroke="var(--obs)" stroke-width="1.5"/>`;
+  }
+  s+='</svg>';el.innerHTML=s;
+  // table
+  const rows=[];for(let t=st.tS;t<=st.tE;t+=36e5){const p=skyAt(t);if(p)rows.push(p)}
+  tb.innerHTML=rows.length?`<thead><tr><th>Time</th><th>Sky</th><th class="num">°C</th><th class="num">Feels</th><th class="num">Rain</th><th class="num">Chance</th><th class="num">Cloud</th><th class="num">hPa</th><th class="num">Vis km</th></tr></thead><tbody>`+rows.map(p=>`<tr><td class="num" style="text-align:left">${fmtT(p.t)}</td><td>${WMO[p.code]||'–'}</td><td class="num">${p.temp!=null?p.temp.toFixed(0):'–'}</td><td class="num">${p.feel!=null?p.feel.toFixed(0):'–'}</td><td class="num">${p.rain!=null?p.rain.toFixed(1):'–'}</td><td class="num">${p.pop!=null?p.pop.toFixed(0)+'%':'–'}</td><td class="num">${p.cloud!=null?p.cloud.toFixed(0)+'%':'–'}</td><td class="num">${p.pres!=null?p.pres.toFixed(0):'–'}</td><td class="num">${p.vis!=null?(p.vis/1000).toFixed(0):'–'}</td></tr>`).join('')+'</tbody>':'';
 }
 function renderStreamNote(st){
   const el=$('streamNote');const m=streamMethod(),rows=diamondRows();const src=tideSrc();
@@ -728,7 +804,7 @@ function renderTimeline(st){
   const el=$('timeline');
   if(!wind||!st){el.innerHTML='<p class="caption">Waiting for data.</p>';return}
   if(!view)view=defaultView();
-  const W=Math.max(320,el.clientWidth||Math.min(1068,window.innerWidth-32)),ml=38,mr=16,mt=64,wh=Math.max(220,Math.min(320,W*0.4)),gap=26,dh=120,tph=64,th=120,mb=28;const H=mt+wh+gap+dh+gap+tph+gap+th+mb;const pw=W-ml-mr;
+  const W=Math.max(320,el.clientWidth||Math.min(1068,window.innerWidth-32)),ml=38,mr=16,mt=64,wh=Math.max(220,Math.min(320,W*0.4)),gap=26,dh=120,th=120,mb=28;const H=mt+wh+gap+dh+gap+th+mb;const pw=W-ml-mr;
   const {a,b}=view;const X=t=>ml+pw*(t-a)/(b-a);
   const pxh=pw/((b-a)/36e5);const stepMin=pxh>=150?15:pxh>=80?30:pxh>=42?60:pxh>=22?120:180;
   const showEns=$('showEns').checked&&!!ens,showSpread=$('showSpread').checked;
@@ -743,7 +819,7 @@ function renderTimeline(st){
   const kStep=maxK>40?10:5;
   for(let k=0;k<=maxK;k+=kStep){s+=`<line x1="${ml}" y1="${Y(k)}" x2="${W-mr}" y2="${Y(k)}" stroke="var(--line-2)"/><text x="${ml-6}" y="${Y(k)+4}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${k}</text>`}
   [[11,'F4'],[17,'F5'],[22,'F6'],[28,'F7']].forEach(([k,l])=>{if(k<maxK)s+=`<line x1="${ml}" y1="${Y(k)}" x2="${W-mr}" y2="${Y(k)}" stroke="var(--line)" stroke-dasharray="1 4"/><text x="${W-mr}" y="${Y(k)-3}" text-anchor="end" font-family="var(--mono)" font-size="9" fill="var(--ink-3)">${l}</text>`});
-  const dy0=mt+wh+gap,tpy0=dy0+dh+gap,ty0=tpy0+tph+gap;
+  const dy0=mt+wh+gap,ty0=dy0+dh+gap;
   const tick0=Math.ceil(a/(stepMin*6e4))*(stepMin*6e4);
   for(let t=tick0;t<=b;t+=stepMin*6e4){const d=new Date(t);const major=d.getMinutes()===0;s+=`<line x1="${X(t)}" y1="${mt}" x2="${X(t)}" y2="${ty0+th}" stroke="${major?'var(--line)':'var(--line-2)'}"/>`;
     s+=`<text x="${X(t)}" y="${H-mb+16}" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="var(--ink-2)">${fmtT(d)}</text>`}
@@ -784,14 +860,6 @@ function renderTimeline(st){
     if(mo&&mo.dir!=null&&mo.t>=a&&mo.t<=b)s+=`<circle cx="${X(mo.t)}" cy="${DY(Math.max(-span,Math.min(span,offset(mo.dir,cen))))}" r="6" fill="var(--panel)" stroke="var(--obs)" stroke-width="2.5"/>`;
     shifts(st).filter(sh=>sh.t1>=a&&sh.t0<=b).forEach(sh=>{const x0=X(Math.max(sh.t0,a)),x1=X(Math.min(sh.t1,b));s+=`<rect x="${x0}" y="${dy0+dh-14}" width="${Math.max(2,x1-x0)}" height="14" fill="rgba(var(--accent-rgb),.22)"/><text x="${(x0+x1)/2}" y="${dy0+dh-3}" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--ink)">${sh.deg>0?'veer':'back'} ${Math.abs(sh.deg).toFixed(0)}°</text>`});
   }
-  // ---- temperature strip ----
-  {const tv=vis.filter(p=>p.tmp!=null);const ot=obs.filter(p=>p.temp!=null);
-   if(tv.length||ot.length){const all=tv.map(p=>p.tmp).concat(ot.map(p=>p.temp));const lo=Math.floor(Math.min(...all)-1),hi=Math.ceil(Math.max(...all)+1);const TY=v=>tpy0+tph*(1-(v-lo)/(hi-lo));
-    s+=`<text x="${W-mr}" y="${tpy0-6}" text-anchor="end" font-size="10" fill="var(--ink-3)" font-family="var(--body)">air °C</text><text x="${ml-6}" y="${tpy0+10}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${hi}</text><text x="${ml-6}" y="${tpy0+tph}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${lo}</text>`;
-    s+=`<line x1="${ml}" y1="${tpy0+tph}" x2="${W-mr}" y2="${tpy0+tph}" stroke="var(--line-2)"/>`;
-    if(tv.length>1)s+=`<path d="${tv.map((p,i)=>(i?'L':'M')+X(p.t).toFixed(1)+','+TY(p.tmp).toFixed(1)).join('')}" fill="none" stroke="var(--temp)" stroke-width="2.5" stroke-linejoin="round"/>`;
-    if(ot.length>1)s+=`<path d="${ot.map((p,i)=>(i?'L':'M')+X(p.t).toFixed(1)+','+TY(p.temp).toFixed(1)).join('')}" fill="none" stroke="var(--obs)" stroke-width="2"/>`;
-    for(let t=tick0;t<=b;t+=stepMin*6e4){const c=consensusAt(t);if(!c||c.tmp==null||X(t)<ml+22)continue;s+=`<text class="tl-lbl" x="${X(t)}" y="${TY(c.tmp)-7}" text-anchor="middle" font-size="12" fill="var(--ink)">${c.tmp.toFixed(0)}°</text>`}}}
   // ---- tide strip ----
   const src=tideSrc();
   if(src){
@@ -968,7 +1036,7 @@ $('zRace').addEventListener('click',()=>{view=defaultView();renderTimeline(windo
 $('zDay').addEventListener('click',()=>{const {d0,d1}=dayBounds();view={a:d0,b:d1};renderTimeline(windowStats())});
 $('zIn').addEventListener('click',()=>zoomBy(1/1.4));
 $('zOut').addEventListener('click',()=>zoomBy(1.4));
-let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{renderTimeline(windowStats());renderLiveChart(windowStats())},150)});
+let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{renderTimeline(windowStats());renderLiveChart(windowStats());renderSky(windowStats())},150)});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&relayURL())load()});
 function setLed(id,cls){const e=$(id);e.classList.remove('ok','warn','bad');if(cls)e.classList.add(cls)}
 function updateLeds(){setLed('ledModels',wind?(wind.models.length>=4?'ok':'warn'):'bad');setLed('ledEns',ens?'ok':'warn');
@@ -977,7 +1045,7 @@ function applyTheme(){const t=store.theme;const root=document.documentElement;if
   const dark=t!=='light';$('themeBtn').title=dark?'Switch to day mode':'Switch to night mode'}
 $('themeBtn').addEventListener('click',()=>{const root=document.documentElement;const dark=root.getAttribute('data-theme')!=='light';store.theme=dark?'light':'dark';save();applyTheme();render()});
 applyTheme();
-document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id===t.dataset.page));store.page=t.dataset.page;save();window.scrollTo(0,0);if(t.dataset.page==='pgTrace')renderTimeline(windowStats());if(t.dataset.page==='pgLive')renderLiveChart(windowStats());if(t.dataset.page==='pgMap')renderMap()}));
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id===t.dataset.page));store.page=t.dataset.page;save();window.scrollTo(0,0);if(t.dataset.page==='pgTrace')renderTimeline(windowStats());if(t.dataset.page==='pgLive')renderLiveChart(windowStats());if(t.dataset.page==='pgMap')renderMap();if(t.dataset.page==='pgSky')renderSky(windowStats())}));
 if(store.page&&document.getElementById(store.page)){const t=document.querySelector('.tab[data-page="'+store.page+'"]');if(t)t.click()}
 $('gearBtn').addEventListener('click',()=>$('sheet').classList.add('on'));
 // ---------- map ----------
