@@ -1,0 +1,1109 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Go Fast v2">
+<meta name="apple-mobile-web-app-title" content="Go Fast v2">
+<title>Go Fast Win Race</title>
+</head><body>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+/* Layout: instrument face. Top bar (name, LEDs, gear), one page at a time (Race / Trace / Conditions / Live), bottom tab bar. Huge condensed numerals, mono labels, hairline cells, one amber accent, cyan for tide. Dark-first with a high-contrast day mode. */
+:root{
+  --bg:#000000; --face:#000000; --panel:#0b0e12; --ink:#ffffff; --ink-2:#9aa4ae; --ink-3:#59636d; --line:#20262d; --line-2:#161b21;
+  --accent:#ffb000; --accent-rgb:255,176,0; --accent-soft:rgba(255,176,0,.14); --accent-ink:#000000; --gust:#ff7a1a;
+  --window:rgba(255,255,255,.05); --obs:#ffffff; --halo:#000000;
+  --good:#2ee68a; --warn:#ffb000; --bad:#ff4d4d; --good-bg:rgba(46,230,138,.14); --warn-bg:rgba(255,176,0,.16); --bad-bg:rgba(255,77,77,.16);
+  --m1:#3987e5; --m2:#d95926; --m3:#199e70; --m4:#c98500; --m5:#d55181; --m6:#9085e9;
+  --tide:#27c3f3; --tide-rgb:39,195,243; --tide-fill:rgba(39,195,243,.16); --temp:#b5e853;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif; --body:"Barlow",system-ui,Helvetica,Arial,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+:root[data-theme="light"]{
+  --bg:#ffffff; --face:#ffffff; --panel:#f3f5f7; --ink:#000000; --ink-2:#3f4a55; --ink-3:#6f7b87; --line:#d5dbe1; --line-2:#e6eaee;
+  --accent:#b86f00; --accent-rgb:184,111,0; --accent-soft:rgba(184,111,0,.14); --accent-ink:#ffffff; --gust:#d9500a;
+  --window:rgba(0,0,0,.06); --obs:#000000; --halo:#ffffff;
+  --good:#117a46; --warn:#b86f00; --bad:#b3261e; --good-bg:#dff4e8; --warn-bg:#fbe9d6; --bad-bg:#f9e1df;
+  --m1:#2a78d6; --m2:#eb6834; --m3:#1baf7a; --m4:#eda100; --m5:#e87ba4; --m6:#6250d6;
+  --tide:#0a7db0; --tide-rgb:10,125,176; --tide-fill:rgba(10,125,176,.16); --temp:#4f8a10; color-scheme:light}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.45 var(--body);font-variant-numeric:tabular-nums}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+.app{min-height:100%;display:flex;flex-direction:column}
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--bg);border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px))}
+.top h1{font:800 20px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;margin:0;white-space:nowrap}
+.top h1 i{color:var(--accent);font-style:normal}
+.top .sub{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-top:3px;line-height:1.5}
+.venueBtn{background:none;border:0;padding:0;text-align:left;cursor:pointer;color:var(--accent);font-weight:400;letter-spacing:.14em;display:block}
+.venueBtn::after{content:' ▾';color:var(--ink-3)}
+.vres{display:grid;gap:4px;margin-top:8px}
+.vres button,.vlist button{text-align:left;text-transform:none;letter-spacing:0;font:14px/1.3 var(--body);padding:9px 10px;width:100%;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.vres button small,.vlist button small{font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+.vlist{display:grid;gap:4px;margin-top:8px}
+.vlist button.cur{border-color:var(--accent)}
+.radius{display:flex;align-items:center;gap:10px;margin-top:10px}
+.radius input{flex:1}
+.radius output{font:700 22px/1 var(--display);min-width:70px;text-align:right}
+.top .brand{min-width:0;flex:1 1 220px}
+.leds{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.led{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.led i{width:7px;height:7px;border-radius:50%;background:var(--ink-3)}
+.led.ok i{background:var(--good);box-shadow:0 0 6px var(--good)} .led.warn i{background:var(--warn);box-shadow:0 0 6px var(--warn)} .led.bad i{background:var(--bad);box-shadow:0 0 6px var(--bad)}
+@media (max-width:480px){.top h1{font-size:19px}.leds{order:3;width:100%;padding-top:2px}}
+.icon{background:none;border:1px solid var(--line);color:var(--ink-2);width:34px;height:34px;border-radius:4px;display:inline-grid;place-items:center;cursor:pointer;padding:0}
+.icon svg{width:18px;height:18px;display:block}
+/* pages */
+.page{display:none;flex:1;padding-block:12px 90px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:560px;width:100%;margin:0 auto}
+.page.on{display:block}
+.page.wide{max-width:1100px}
+/* instrument cells */
+.cell{padding:12px 0 13px;border-bottom:1px solid var(--line)}
+.cell:last-child{border-bottom:0}
+.k{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
+.v{font:800 80px/0.95 var(--display);letter-spacing:-.02em;margin-top:2px}
+.v small{font:600 18px/1 var(--display);color:var(--ink-2);letter-spacing:.06em;margin-left:6px}
+.v.md{font-size:54px} .v.sm{font-size:38px} .v.xs{font-size:28px;line-height:1.1}
+.wind{color:var(--accent)} .tidec{color:var(--tide)}
+.s{font-family:var(--mono);font-size:10.5px;color:var(--ink-2);margin-top:5px;line-height:1.5}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:2px;padding:3px 8px;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.pill.good{background:var(--good-bg);color:var(--good)} .pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.bad{background:var(--bad-bg);color:var(--bad)}
+/* race setup */
+.setup{display:grid;grid-template-columns:auto 1fr;gap:10px 18px;align-items:end;padding:4px 0 14px;border-bottom:1px solid var(--line)}
+.tsel{font:700 36px/1 var(--display);color:var(--ink);background:transparent;border:0;border-bottom:2px dotted var(--ink-3);border-radius:0;padding:0 2px 2px;-webkit-appearance:none;appearance:none;cursor:pointer;letter-spacing:.01em;text-align:inherit}
+.tsel:active,.tsel:focus{border-bottom-color:var(--accent)}
+.range .vals{align-items:end}
+.setup label{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:4px}
+input[type=date],input[type=number],input[type=time],input[type=text],input[type=url],select,button,textarea{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:7px 9px;max-width:100%}
+input[type=date]{font:700 22px/1 var(--display);padding:4px 8px;letter-spacing:.02em}
+button{cursor:pointer;font:700 13px/1 var(--display);text-transform:uppercase;letter-spacing:.12em;padding:9px 12px}
+button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.range{display:grid;gap:2px}
+.range .vals{display:flex;justify-content:space-between;font:700 34px/1 var(--display)}
+.range .vals span{font:400 9.5px/1 var(--mono);color:var(--ink-3);display:block;text-transform:uppercase;letter-spacing:.2em;margin-bottom:3px}
+.dual{position:relative;height:30px}
+.dual input[type=range]{position:absolute;left:0;right:0;top:0;width:100%;margin:0;background:none;pointer-events:none;-webkit-appearance:none;appearance:none;height:30px}
+.dual input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--line)}
+.dual input[type=range]::-moz-range-track{height:2px;background:var(--line)}
+.dual input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;pointer-events:auto;width:16px;height:26px;margin-top:-12px;border-radius:3px;background:var(--accent);border:2px solid var(--bg)}
+.dual input[type=range]::-moz-range-thumb{pointer-events:auto;width:12px;height:22px;border-radius:3px;background:var(--accent);border:2px solid var(--bg)}
+.dual .fill{position:absolute;top:14px;height:2px;background:var(--accent);pointer-events:none}
+.status{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:.04em;line-height:1.5;padding-top:8px}
+@media (max-width:420px){.setup{grid-template-columns:1fr}}
+/* sections on other pages */
+h2{font:700 11px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin:0 0 10px;display:flex;align-items:center;gap:8px}
+h2 .tag{margin-left:auto;font-weight:400;letter-spacing:.1em}
+.sec{padding:14px 0;border-bottom:1px solid var(--line)}
+.sec:last-child{border-bottom:0}
+h3{font:700 10px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);margin:14px 0 8px}
+.brief{display:grid;gap:10px}
+.brief p{margin:0;font-size:15.5px;line-height:1.55;max-width:60ch}
+.brief p b{font-weight:600;color:var(--accent)}
+.brief .meta{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:.14em;text-transform:uppercase}
+.caption{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:8px;line-height:1.5}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);margin-top:10px;align-items:center}
+.legend i{display:inline-block;width:16px;height:2px;vertical-align:middle;margin-right:6px}
+.legend i.dash{background:repeating-linear-gradient(90deg,var(--gust) 0 4px,transparent 4px 7px)}
+.legend i.band{height:8px;background:var(--accent-soft)}
+.legend i.obs{background:var(--obs)}
+.legend b{color:var(--ink)}
+.legend label{display:inline-flex;align-items:center;gap:5px;cursor:pointer;text-transform:none}
+.chartBox{position:relative;touch-action:none;user-select:none;-webkit-user-select:none;background:var(--face)}
+.chartBox svg{cursor:crosshair}
+.zoomBar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px}
+.zoomBar .sp{flex:1}
+.zoomBar button{padding:7px 10px}
+.tip{position:absolute;pointer-events:none;background:var(--bg);border:1px solid var(--accent);padding:6px 9px;font-size:11px;white-space:nowrap;z-index:5;font-family:var(--mono);line-height:1.5}
+.tip .t{font-weight:700;color:var(--accent)}
+.tl-lbl{font-family:var(--display);font-weight:700;paint-order:stroke;stroke:var(--face);stroke-width:4px;stroke-linejoin:round}
+.tl-mono{font-family:var(--mono);font-weight:500;paint-order:stroke;stroke:var(--face);stroke-width:3px;stroke-linejoin:round}
+svg{display:block;max-width:100%;height:auto;overflow:visible}
+.shift{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:baseline;padding:8px 0;border-top:1px solid var(--line-2);font-size:13px}
+.shift .d{font:800 26px/1 var(--display);color:var(--accent);white-space:nowrap}
+.shift .w{font-family:var(--mono);font-size:10.5px;color:var(--ink-2)}
+details summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;font:700 11px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
+details summary::-webkit-details-marker{display:none}
+details summary .pill{margin-left:auto}
+.compassWrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+@media (max-width:640px){.compassWrap{grid-template-columns:1fr}}
+.live{display:grid;gap:0}
+.st{padding:12px 0 13px;border-bottom:1px solid var(--line);display:grid;gap:2px}
+.st .n{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
+.st .age{font-family:var(--mono);font-size:9.5px;color:var(--ink-3)}
+.st .big{font:800 54px/0.95 var(--display);margin-top:2px}
+.st .big small{font:600 16px/1 var(--display);color:var(--ink-2);letter-spacing:.06em;margin-left:6px}
+.st .row{font-family:var(--mono);font-size:10.5px;color:var(--ink-2);line-height:1.5}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line-2);vertical-align:top}
+th{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-3);font-weight:600}
+td.num,th.num{text-align:right;font-family:var(--mono);font-size:11.5px;white-space:nowrap}
+.swatch{display:inline-block;width:9px;height:9px;margin-right:6px;vertical-align:-1px}
+.tableWrap{overflow-x:auto}
+@media (max-width:640px){#modelTable td:nth-child(2),#modelTable th:nth-child(2){display:none}}
+.note{font-size:13px;color:var(--ink-2);margin:0 0 10px}
+.err{color:var(--bad)}
+a{color:var(--accent)}
+footer{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.6;padding-top:14px}
+/* bottom tabs */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:9;background:var(--bg);border-top:1px solid var(--line);display:flex;padding:6px max(16px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.tab{flex:1;background:none;border:0;color:var(--ink-3);font:700 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;padding:10px 0 8px;display:grid;gap:6px;justify-items:center;border-radius:0}
+.tab i{display:block;width:22px;height:3px;background:var(--line)}
+#map{height:360px;min-height:300px;background:#0b0d10;border:1px solid var(--line)}
+.leaflet-container{background:#0b0d10;font-family:var(--body)}
+:root:not([data-theme="light"]) .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.6)}
+.leaflet-container svg{max-width:none}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--panel);color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.leaflet-popup-content{font-size:12.5px;line-height:1.45;margin:10px 12px}
+.leaflet-popup-content b{font-family:var(--display);font-size:16px}
+.leaflet-popup-content .pl{display:inline-block;margin-top:6px;color:var(--accent);font-weight:600;cursor:pointer}
+.leaflet-control-attribution{background:rgba(0,0,0,.6)!important;color:var(--ink-3)!important;font-size:9px!important}
+.leaflet-control-attribution a{color:var(--ink-2)!important}
+.leaflet-bar a{background:var(--panel)!important;color:var(--ink)!important;border-color:var(--line)!important}
+.mapBar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0;font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+.tab.on{color:var(--ink)} .tab.on i{background:var(--accent)}
+/* settings sheet */
+.sheet{position:fixed;inset:0;z-index:20;background:var(--bg);overflow:auto;display:none;padding-block:calc(10px + env(safe-area-inset-top,0px)) 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.sheet.on{display:block}
+.sheet .inner{max-width:560px;margin:0 auto}
+.sheet .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.set,.obsForm{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;align-items:end}
+.set label,.obsForm label{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:4px}
+.set input,.set select,.obsForm input{width:100%}
+.set .wide{grid-column:1/-1}
+.compassArrow{transition:transform .5s ease}
+@media (prefers-reduced-motion:reduce){.compassArrow{transition:none}}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <h1>Go Fast <i>·</i> Win Race</h1>
+      <button class="sub venueBtn" id="venueBtn" type="button" title="Change venue"></button>
+    </div>
+    <div class="leds">
+      <span class="led" id="ledModels" title="Forecast models"><i></i><span>Models</span></span>
+      <span class="led" id="ledEns" title="Ensemble"><i></i><span>Ensemble</span></span>
+      <span class="led" id="ledLive" title="Live stations"><i></i><span>Live</span></span>
+      <span class="led" id="ledTide" title="Tide source"><i></i><span>Tide</span></span>
+    </div>
+    <button class="icon" id="themeBtn" type="button" title="Day / night" aria-label="Switch day or night mode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button>
+    <button class="icon" id="gearBtn" type="button" title="Settings" aria-label="Open settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+  </header>
+
+  <!-- PAGE: RACE -->
+  <main class="page on" id="pgRace">
+    <div class="setup">
+      <div><label for="date">Race date</label><input type="date" id="date"></div>
+      <div class="range">
+        <div class="vals">
+          <div><span>Start · tap to pick</span><select id="start" class="tsel" aria-label="Race start time"></select></div>
+          <div style="text-align:right"><span>Finish · tap to pick</span><select id="end" class="tsel" aria-label="Race finish time"></select></div>
+        </div>
+        <div class="dual"><div class="fill" id="fill"></div><input type="range" id="startR" min="0" max="96" step="1" value="38" aria-label="Race start slider"><input type="range" id="endR" min="0" max="96" step="1" value="52" aria-label="Race finish slider"></div>
+      </div>
+    </div>
+    <div id="tiles"></div>
+    <div class="status" id="status">Loading…</div>
+    <section class="sec" style="margin-top:14px;border-top:1px solid var(--line);border-bottom:0">
+    <h2>Where the data comes from<span class="tag" id="mapTag"></span></h2>
+    <div id="map" role="application" aria-label="Map of venue and live stations"></div>
+    <div class="mapBar" id="mapBar" hidden><span id="mapBarTxt"></span><button type="button" id="mapUse">Use this spot as venue</button><button type="button" id="mapCancel">Cancel</button></div>
+    <div class="legend"><span><i style="background:var(--accent);height:10px;width:10px;border-radius:50%"></i>Forecast point (venue)</span><span><i style="background:var(--obs);height:10px;width:10px;border-radius:50%"></i>Plotted station</span><span><i style="background:var(--ink-3);height:10px;width:10px;border-radius:50%"></i>Other station</span><span><i style="background:var(--tide);height:10px;width:10px;border-radius:50%"></i>Tide gauge</span><span><i style="border:1px dashed var(--accent);height:10px;width:10px;border-radius:50%;background:none"></i>Search radius</span></div>
+    <div class="caption">Forecasts, ensembles and the modelled tide are for the amber point. Tap a station for its latest reading and to plot it instead; tap anywhere else to set a new venue there. Map © OpenStreetMap contributors.</div>
+    </section>
+  </main>
+
+  <!-- PAGE: TRACE -->
+  <main class="page wide" id="pgTrace">
+    <div class="zoomBar">
+      <button type="button" id="zRace">Race ±2h</button>
+      <button type="button" id="zDay">Day</button>
+      <span class="sp"></span>
+      <button type="button" id="zOut" aria-label="Zoom out">−</button>
+      <button type="button" id="zIn" aria-label="Zoom in">+</button>
+    </div>
+    <div class="chartBox" id="timeline"></div>
+    <div class="legend" id="legend">
+      <span><i style="background:var(--accent);height:3px"></i><b>Wind</b></span>
+      <span><i class="dash"></i>Gust</span>
+      <span><i class="band"></i>Ensemble 10–90</span>
+      <span><i class="obs"></i>Observed</span>
+      <span><i style="background:var(--tide)"></i>Tide · twelfths</span>
+      <label><input type="checkbox" id="showEns" checked> ens</label>
+      <label><input type="checkbox" id="showSpread"> models</label>
+    </div>
+    <div class="caption">Pinch or scroll to zoom, drag to pan, tap for a readout. Top: wind and gust, kn. Middle: direction, race consensus as the centre line, up = veer. Bottom: tide height, each hour after a turn shaded by its twelfth, darker = faster; knots are the estimated stream at the course (Settings).</div>
+  </main>
+
+  <!-- PAGE: SKY -->
+  <main class="page wide" id="pgSky">
+    <section class="sec brief" id="skyBrief"></section>
+    <section class="sec">
+      <h2>Race day<span class="tag">Temperature · Rain · Cloud · Pressure</span></h2>
+      <div class="chartBox" id="skyChart"></div>
+      <div class="legend"><span><i style="background:var(--temp);height:3px"></i><b>Air °C</b></span><span><i style="background:var(--ink-3);height:3px"></i>Feels like</span><span><i style="background:var(--obs)"></i>Observed</span><span><i style="background:var(--tide);height:8px"></i>Rain mm/h</span><span><i class="dash" style="background:repeating-linear-gradient(90deg,var(--tide) 0 4px,transparent 4px 7px)"></i>Chance %</span><span><i style="background:var(--ink-2);height:8px;opacity:.5"></i>Cloud</span><span><i style="background:var(--accent);height:2px"></i>Pressure</span></div>
+      <div class="caption">Forecast from Open-Meteo's best-match model for this point. Observed temperature and pressure from the plotted station when the race is today. Race window shaded.</div>
+    </section>
+    <section class="sec">
+      <h2>Hour by hour<span class="tag">Race window</span></h2>
+      <div class="tableWrap"><table id="skyTable"></table></div>
+    </section>
+  </main>
+
+  <!-- PAGE: CONDITIONS -->
+  <main class="page" id="pgCond">
+    <section class="sec brief" id="brief"></section>
+    <section class="sec">
+      <details id="shiftsBox" open>
+        <summary id="shiftsSum">Wind shifts</summary>
+        <div id="shifts" style="margin-top:10px"></div>
+      </details>
+    </section>
+    <section class="sec">
+      <h2>Window mean<span class="tag">Direction · Strength</span></h2>
+      <div class="compassWrap">
+        <div><div id="compass"></div><div class="caption" id="compassCap"></div></div>
+        <div><div id="speedbar"></div><div class="caption">Band = lowest to highest model mean over the window; heavy mark = consensus; dashed box = ensemble 10–90%; thin bar above = gusts.</div></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- PAGE: LIVE -->
+  <main class="page wide" id="pgLive">
+    <section class="sec">
+      <h2>Now<span class="tag" id="accTag">Observed vs consensus · ±6 h</span></h2>
+      <div class="chartBox" id="liveChart"></div>
+      <div class="legend"><span><i class="obs"></i><b>Observed</b></span><span><i style="height:1px;border-top:1px dotted var(--obs);background:none"></i>Obs gust</span><span><i style="background:var(--ink-2)"></i>Nearest other station</span><span><i style="background:var(--accent);height:3px"></i>Consensus</span><span><i class="dash"></i>Consensus gust</span></div>
+      <div class="caption" id="accCap">Left of the line: the last 6 hours, station readings against what the consensus said. Right: the next 6 hours of consensus forecast. Accuracy = 100% minus the typical miss as a share of the observed wind (speed) or of 90° (direction).</div>
+    </section>
+    <section class="sec">
+      <h2>Live stations<span class="tag" id="stTag">HHA · 1 min</span></h2>
+      <div id="live"></div>
+    </section>
+    <section class="sec">
+      <h2>Where you've seen these models<span class="tag">Sources</span></h2>
+      <p class="note">The six models below are the same ones behind the forecast sites. This app reads them directly from the model centres via Open-Meteo, so the consensus is the "4 websites" compared for you.</p>
+      <div class="tableWrap"><table id="siteTable">
+        <thead><tr><th>Website / app</th><th>Models it shows</th></tr></thead>
+        <tbody>
+          <tr><td>Windy</td><td><span class="swatch" style="background:var(--m1)"></span>ECMWF · <span class="swatch" style="background:var(--m2)"></span>GFS · <span class="swatch" style="background:var(--m3)"></span>ICON · <span class="swatch" style="background:var(--m4)"></span>UK Met Office · <span class="swatch" style="background:var(--m5)"></span>Météo-France AROME</td></tr>
+          <tr><td>PredictWind</td><td><span class="swatch" style="background:var(--m1)"></span>ECMWF · <span class="swatch" style="background:var(--m2)"></span>GFS · <span class="swatch" style="background:var(--m4)"></span>UK Met Office, plus its own PWG/PWE runs</td></tr>
+          <tr><td>BBC Weather</td><td>DTN / MeteoGroup blend, led by <span class="swatch" style="background:var(--m1)"></span>ECMWF</td></tr>
+          <tr><td>XC Weather</td><td><span class="swatch" style="background:var(--m2)"></span>GFS</td></tr>
+          <tr><td>Met Office app</td><td><span class="swatch" style="background:var(--m4)"></span>UK Met Office (UKV / global)</td></tr>
+          <tr><td>Windguru</td><td><span class="swatch" style="background:var(--m2)"></span>GFS · <span class="swatch" style="background:var(--m3)"></span>ICON · <span class="swatch" style="background:var(--m1)"></span>ECMWF (paid tier)</td></tr>
+          <tr><td>AccuWeather</td><td>Own blend of global models including <span class="swatch" style="background:var(--m1)"></span>ECMWF and <span class="swatch" style="background:var(--m2)"></span>GFS</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+    <section class="sec">
+      <h2>Models<span class="tag">Window mean · err today</span></h2>
+      <div class="tableWrap"><table id="modelTable"></table></div>
+      <div class="caption" id="tableCap"></div>
+    </section>
+    <footer>Forecasts: Open-Meteo (CC BY 4.0) serving ECMWF, NOAA GFS, DWD ICON, UK Met Office, Météo-France and KNMI, plus ECMWF (51) and GEFS (31) ensembles. Live observations and tide predictions: Harwich Haven Authority (hha.co.uk), heights above Harwich chart datum; Open-Meteo marine model (MSL) as fallback. Tide size: predicted range against Harwich springs 3.6 m / neaps 2.3 m. Windy, XC Weather, BBC and PredictWind draw on these same models. GO FAST · WIN RACE v2.8 beta · venues, airport observations and EA tide gauges are new; Levington keeps its Harwich Haven feeds.</footer>
+  </main>
+
+  <nav class="tabs" aria-label="Pages">
+    <button class="tab on" data-page="pgRace" type="button"><i></i>Race</button>
+    <button class="tab" data-page="pgCond" type="button"><i></i>Brief</button>
+    <button class="tab" data-page="pgTrace" type="button"><i></i>Trace</button>
+    <button class="tab" data-page="pgSky" type="button"><i></i>Sky</button>
+    <button class="tab" data-page="pgLive" type="button"><i></i>Live</button>
+  </nav>
+
+  <!-- VENUE SHEET -->
+  <div class="sheet" id="vsheet">
+    <div class="inner">
+      <div class="hd"><h2 style="margin:0">Venue</h2><button type="button" id="vClose">Done</button></div>
+      <label for="vq" class="k" style="display:block;margin-bottom:4px">Search a postcode, town, marina or sailing club</label>
+      <div style="display:flex;gap:8px"><input type="text" id="vq" placeholder="e.g. IP10 0LN · Nelson · Kerikeri Cruising Club · Lefkas marina" style="flex:1" autocomplete="off"><button type="button" id="vGo">Search</button></div>
+      <div class="status" id="vStatus"></div>
+      <div class="vres" id="vres"></div>
+      <h3>Saved venues</h3>
+      <div class="vlist" id="vlist"></div>
+      <h3>Live data search radius</h3>
+      <div class="radius"><input type="range" id="radius" min="1" max="60" step="1" value="5" aria-label="Live data search radius"><output id="radiusOut">5 nm</output></div>
+      <p class="note" style="margin-top:8px">Live wind comes from harbour-authority feeds where we have them (Harwich Haven at Levington) and from airport observation reports anywhere in the world, which are hourly and often daytime-only abroad. Tide gauges: Harwich Haven at Levington, the Environment Agency elsewhere in the UK. Forecasts, ensembles and the modelled tide work everywhere.</p>
+    </div>
+  </div>
+
+  <!-- SETTINGS SHEET -->
+  <div class="sheet" id="sheet">
+    <div class="inner">
+      <div class="hd"><h2 style="margin:0">Settings</h2><button type="button" id="sheetClose">Done</button></div>
+      <div class="set">
+        <div class="wide"><label for="relay">Live data relay URL (Cloudflare Worker)</label><input type="url" id="relay" placeholder="https://race-wind-relay.drandyjones.workers.dev (built in; override here)"></div>
+        <div><label for="station">Observed station</label><select id="station"><option value="auto">Nearest station</option></select></div>
+        <div><label for="gustThr">Gust alert threshold, kn</label><input type="number" id="gustThr" min="10" max="40" step="1" value="20"></div>
+        <div><button id="refresh" type="button" style="width:100%">Refresh data</button></div>
+      </div>
+      <h3>Tidal stream at the course</h3>
+      <div class="set">
+        <div><label for="streamMethod">Stream method</label><select id="streamMethod"><option value="prism">Prism model</option><option value="diamond">Tidal diamond table</option><option value="factor">Simple factor</option></select></div>
+        <div><label for="slackOff">Stream turns after HW/LW, min</label><input type="number" id="slackOff" min="-90" max="120" step="5" value="30"></div>
+        <div><label for="kStream">Simple factor, kn per m/h</label><input type="number" id="kStream" min="0.2" max="4" step="0.1" value="1.4"></div>
+        <div><label for="aLW">Water area upstream at LW, km²</label><input type="number" id="aLW" min="0.1" max="50" step="0.1" value="2.0"></div>
+        <div><label for="aHW">Water area upstream at HW, km²</label><input type="number" id="aHW" min="0.1" max="50" step="0.1" value="8.0"></div>
+        <div><label for="chW">Channel width at course, m</label><input type="number" id="chW" min="20" max="2000" step="10" value="250"></div>
+        <div><label for="chD">Channel depth below CD, m</label><input type="number" id="chD" min="0.5" max="30" step="0.5" value="6"></div>
+        <div><label for="flW">Flats width (both sides), m</label><input type="number" id="flW" min="0" max="3000" step="50" value="800"></div>
+        <div><label for="flH">Flats level above CD, m</label><input type="number" id="flH" min="0" max="4" step="0.1" value="1.5"></div>
+        <div class="wide"><label for="diamond">Tidal diamond, 13 rows: hour vs HW Harwich, set °T, springs kn, neaps kn</label><textarea id="diamond" rows="5" style="width:100%;font:12px/1.4 var(--mono)" placeholder="-6, 130, 0.4, 0.2
+-5, 135, 0.9, 0.5
+…
+0, 310, 0.3, 0.1
+…
++6, 128, 0.5, 0.3"></textarea></div>
+        <div class="wide status" id="streamNote"></div>
+      </div>
+      <h3>Manual observation (used when no relay)</h3>
+      <div class="obsForm">
+        <div><label for="obsTime">Time</label><input type="time" id="obsTime"></div>
+        <div><label for="obsSpeed">Speed, kn</label><input type="number" id="obsSpeed" min="0" max="80" step="0.1"></div>
+        <div><label for="obsGust">Gust, kn</label><input type="number" id="obsGust" min="0" max="100" step="0.1"></div>
+        <div><label for="obsDir">Direction, °</label><input type="number" id="obsDir" min="0" max="360" step="1"></div>
+        <div><button id="obsClear" type="button">Clear</button></div>
+      </div>
+      <p class="note" style="margin-top:12px">Live stations, the Harwich tide gauge and the port's tide predictions come from Harwich Haven Authority through the built-in relay. Leave the relay box empty unless you run your own.</p>
+    </div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function(){
+const VENUES_BUILTIN=[{id:'levington',name:'Levington · Suffolk Yacht Harbour',sub:'River Orwell · UK',lat:51.995,lon:1.274,tide:{lat:51.93,lon:1.33},hha:true,stream:{streamMethod:'prism',slackOff:30,kStream:1.4,aLW:2,aHW:8,chW:250,chD:6,flW:800,flH:1.5,diamond:''}}];
+function allVenues(){return VENUES_BUILTIN.concat(store.venues||[])}
+function V(){return allVenues().find(v=>v.id===store.venueId)||VENUES_BUILTIN[0]}
+const LOC={get lat(){return V().lat},get lon(){return V().lon}};
+const TIDE_PT={get lat(){return (V().tide||V()).lat},get lon(){return (V().tide||V()).lon}};
+const NM=1.852;
+function distNm(a,b){const R=6371/NM;const p1=a.lat*Math.PI/180,p2=b.lat*Math.PI/180;const dl=(b.lon-a.lon)*Math.PI/180;const x=Math.sin((p2-p1)/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
+function brgTo(a,b){const p1=a.lat*Math.PI/180,p2=b.lat*Math.PI/180;const dl=(b.lon-a.lon)*Math.PI/180;const y=Math.sin(dl)*Math.cos(p2),x=Math.cos(p1)*Math.sin(p2)-Math.sin(p1)*Math.cos(p2)*Math.cos(dl);return (Math.atan2(y,x)*180/Math.PI+360)%360}
+const radiusNm=()=>Math.max(1,Math.min(60,+(store.radius||5)));
+const HHA='https://hha.co.uk/wp-content/uploads/hha-met-api/';
+const HHA_STATIONS={harwichhmj:{name:'Harwich HM Jetty',lat:51.9472,lon:1.2900},erwarton:{name:'Erwarton Beacon',lat:51.9519,lon:1.2206},landguardgill:{name:'Landguard',lat:51.9358,lon:1.3177},eastfortmassoc:{name:'East Fort Massac',lat:51.8819,lon:1.5410}};
+let STATIONS={};
+function regStation(id,name,kind,lat,lon,series,extra){const d=distNm(V(),{lat,lon}),b=brgTo(V(),{lat,lon});STATIONS[id]={name,kind,lat,lon,dist:d,brg:b,note:`${kind==='metar'?'airport · ':''}${d.toFixed(1)} nm ${comp(b)}${extra?' · '+extra:''}`,series:series.filter(p=>p.t).sort((a,b)=>a.t-b.t)}}
+function byDist(){return Object.keys(STATIONS).filter(k=>STATIONS[k].series.length).sort((a,b)=>STATIONS[a].dist-STATIONS[b].dist)}
+function secondaryKey(){const p=stationKey();return byDist().find(k=>k!==p)||null}
+function stationKey(){const v=document.getElementById('station').value;const pool=byDist();if(!pool.length)return null;if(v&&v!=='auto'&&v!=='upwind'&&STATIONS[v]&&STATIONS[v].series.length)return v;if(v==='upwind'){const c=consensusAt(Date.now());if(c&&c.dir!=null){let best=null;pool.forEach(k=>{const d=Math.abs(offset(STATIONS[k].brg,c.dir));if(!best||d<best.d)best={k,d}});if(best&&best.d<=70)return best.k}}return pool[0]}
+const MODELS=[
+  {id:'ecmwf_ifs025',name:'ECMWF IFS',used:'Windy · BBC (DTN blend) · PredictWind',c:'--m1'},
+  {id:'gfs_seamless',name:'NOAA GFS',used:'XC Weather · Windy · PredictWind',c:'--m2'},
+  {id:'icon_seamless',name:'DWD ICON',used:'Windy',c:'--m3'},
+  {id:'ukmo_seamless',name:'UK Met Office',used:'Windy · PredictWind',c:'--m4'},
+  {id:'meteofrance_seamless',name:'Météo-France ARPEGE/AROME',used:'Windy (AROME)',c:'--m5'},
+  {id:'knmi_seamless',name:'KNMI HARMONIE',used:'North Sea high-res',c:'--m6'}
+];
+const SPR=3.6,NEAP=2.3; // Harwich mean ranges, m
+const MS2KN=1.943844;
+const $=id=>document.getElementById(id);
+const CP=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+const comp=d=>CP[Math.round(((d%360)+360)%360/22.5)%16];
+const bft=k=>k<1?0:k<4?1:k<7?2:k<11?3:k<17?4:k<22?5:k<28?6:k<34?7:k<41?8:k<48?9:k<56?10:k<64?11:12;
+const pad=n=>String(n).padStart(2,'0');
+const hm=q=>pad(Math.floor(q/4))+':'+pad((q%4)*15);
+const fmtT=d=>{d=new Date(d);return pad(d.getHours())+':'+pad(d.getMinutes())};
+const localDate=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const mean=a=>a.reduce((p,q)=>p+q,0)/a.length;
+const pct=(arr,p)=>{if(!arr.length)return null;const s=arr.slice().sort((a,b)=>a-b);const i=(s.length-1)*p;const lo=Math.floor(i),hi=Math.ceil(i);return s[lo]+(s[hi]-s[lo])*(i-lo)};
+let store={};try{store=JSON.parse(localStorage.getItem('lrw')||'{}')}catch(e){store={}}
+const save=()=>{try{localStorage.setItem('lrw',JSON.stringify(store))}catch(e){}};
+
+// ---------- state ----------
+let wind=null,ens=null,omTide=null,hhaPred=null,hhaTide=null,live={},view=null,eaGauge=null,sky=null;
+const today=new Date();today.setHours(0,0,0,0);
+const dateEl=$('date'),startEl=$('start'),endEl=$('end');
+[startEl,endEl].forEach(sel=>{for(let q=0;q<=96;q++){const o=document.createElement('option');o.value=q;o.textContent=hm(q);sel.appendChild(o)}});startEl.value=38;endEl.value=52;
+const startR=$('startR'),endR=$('endR');
+function syncSliders(){startR.value=startEl.value;endR.value=endEl.value;const pc=v=>v/96*100;$('fill').style.left=pc(+startEl.value)+'%';$('fill').style.width=(pc(+endEl.value)-pc(+startEl.value))+'%'}
+const toISO=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const maxD=new Date(today);maxD.setDate(maxD.getDate()+6);
+dateEl.min=toISO(today);dateEl.max=toISO(maxD);
+dateEl.value=(store.date&&store.date>=dateEl.min&&store.date<=dateEl.max)?store.date:toISO(today);
+if(store.start!=null)startEl.value=store.start;if(store.end!=null)endEl.value=store.end;
+['obsTime','obsSpeed','obsGust','obsDir','relay','gustThr'].forEach(k=>{if(store[k]!=null)$(k).value=store[k]});
+loadStreamSettings();
+if(!$('obsTime').value)$('obsTime').value=fmtT(new Date());
+$('showSpread').checked=!!store.spread;$('showEns').checked=store.ens!==false;
+const DEFAULT_RELAY='https://race-wind-relay.drandyjones.workers.dev';
+const relayURL=()=>{const r=(($('relay').value||'').trim())||DEFAULT_RELAY;return r.includes('?')?r:r.replace(/\/$/,'')+'/?url='};
+const kStream=()=>parseFloat($('kStream').value)||1.4;
+const gustThr=()=>parseFloat($('gustThr').value)||20;
+const num=(id,d)=>{const v=parseFloat($(id).value);return isNaN(v)?d:v};
+var STREAM_KEYS=['streamMethod','slackOff','kStream','aLW','aHW','chW','chD','flW','flH','diamond'];
+function loadStreamSettings(){const v=V();const KEYS=['streamMethod','slackOff','kStream','aLW','aHW','chW','chD','flW','flH','diamond'];const s=Object.assign({streamMethod:'factor',slackOff:30,kStream:1.4,aLW:2,aHW:8,chW:250,chD:6,flW:800,flH:1.5,diamond:''},v.stream||{},(store.streamBy||{})[v.id]||{});KEYS.forEach(k=>{$(k).value=s[k]})}
+function saveStreamSettings(){store.streamBy=store.streamBy||{};const o={};STREAM_KEYS.forEach(k=>o[k]=$(k).value);store.streamBy[V().id]=o;save()}
+const slackMs=()=>num('slackOff',30)*6e4;
+const CD_OFFSET=2.2; // metres: Harwich mean sea level above chart datum, for the Open-Meteo fallback
+function diamondRows(){const rows=[];($('diamond').value||'').split(/\n/).forEach(l=>{const m=l.replace(/[^\d.+\-,;\s]/g,' ').split(/[,;\s]+/).filter(Boolean).map(Number);if(m.length>=4&&m.every(x=>!isNaN(x))&&m[0]>=-6&&m[0]<=6)rows.push({h:m[0],dir:m[1],sp:m[2],np:m[3]})});rows.sort((a,b)=>a.h-b.h);return rows}
+function streamMethod(){const m=$('streamMethod').value;if(m==='diamond'&&diamondRows().length<3)return 'prism';return m}
+
+// ---------- data ----------
+function parseLocal(s){const [d,t]=s.split('T');const [y,m,dd]=d.split('-').map(Number);const [hh,mm]=t.split(':').map(Number);return new Date(y,m-1,dd,hh,mm)}
+async function getJSON(u){const r=await fetch(u);let j=null;try{j=await r.json()}catch(e){}if(!r.ok)throw new Error((j&&j.reason)||('HTTP '+r.status));return j}
+const FRESH_MS=15*6e4;let usedCache=[];
+async function cachedJSON(key,u,force){const ck='gfc_'+key+'_'+V().id;let c=null;try{c=JSON.parse(localStorage.getItem(ck)||'null')}catch(e){}
+  if(c&&c.url===u&&!force&&Date.now()-c.at<FRESH_MS){usedCache.push(key);return c.data}
+  try{const d=await getJSON(u);if(d&&d.error)throw new Error(d.reason||'API error');try{localStorage.setItem(ck,JSON.stringify({at:Date.now(),url:u,data:d}))}catch(e){}return d}
+  catch(e){if(c&&c.url===u){usedCache.push(key+' (stale '+fmtT(c.at)+')');return c.data}throw e}}
+async function hha(path){const rl=relayURL();if(!rl)throw new Error('no relay');return getJSON(rl+encodeURIComponent(HHA+path+'?t='+Math.floor(Date.now()/6e4)))}
+let retryT=null,retryN=0;
+async function load(force){
+  const msgs=[];usedCache=[];$('status').textContent='Loading…';
+  const jobs=[
+    cachedJSON('models',`https://api.open-meteo.com/v1/forecast?latitude=${LOC.lat}&longitude=${LOC.lon}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kn&models=${MODELS.map(m=>m.id).join(',')}&past_days=1&forecast_days=7&timezone=Europe%2FLondon`,force).then(j=>{
+      if(j.error)throw new Error(j.reason);const h=j.hourly;const t0=parseLocal(h.time[0]);
+      const ms=MODELS.map(m=>{const sfx=k=>h[k+'_'+m.id]||(Object.keys(h).some(x=>x.endsWith('_'+m.id))?null:h[k]);return {...m,spd:sfx('wind_speed_10m'),dir:sfx('wind_direction_10m'),gst:sfx('wind_gusts_10m')}}).filter(m=>m.spd&&m.dir&&m.spd.some(v=>v!=null));
+      wind={t0,n:h.time.length,models:ms};msgs.push(`${ms.length}/${MODELS.length} models`)}).catch(e=>{wind=null;msgs.push('models failed: '+e.message)}),
+    cachedJSON('sky',`https://api.open-meteo.com/v1/forecast?latitude=${LOC.lat}&longitude=${LOC.lon}&hourly=temperature_2m,apparent_temperature,precipitation,precipitation_probability,cloud_cover,weather_code,pressure_msl,visibility,relative_humidity_2m&past_days=1&forecast_days=7&timezone=Europe%2FLondon`,force).then(j=>{
+      if(j.error)throw new Error(j.reason);const hh=j.hourly;sky={t0:parseLocal(hh.time[0]),n:hh.time.length,temp:hh.temperature_2m,feel:hh.apparent_temperature,rain:hh.precipitation,pop:hh.precipitation_probability,cloud:hh.cloud_cover,code:hh.weather_code,pres:hh.pressure_msl,vis:hh.visibility,rh:hh.relative_humidity_2m}}).catch(e=>{sky=null;msgs.push('sky failed: '+e.message)}),
+    cachedJSON('ens',`https://ensemble-api.open-meteo.com/v1/ensemble?latitude=${LOC.lat}&longitude=${LOC.lon}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kn&models=ecmwf_ifs025,gfs025&forecast_days=4&timezone=Europe%2FLondon`,force).then(j=>{
+      if(j.error)throw new Error(j.reason);const h=j.hourly;const keys=Object.keys(h);const spd=[],dir=[],gst=[];
+      keys.forEach(k=>{if(k.startsWith('wind_speed_10m'))spd.push(h[k]);else if(k.startsWith('wind_direction_10m'))dir.push(h[k]);else if(k.startsWith('wind_gusts_10m'))gst.push(h[k])});
+      ens={t0:parseLocal(h.time[0]),n:h.time.length,spd,dir,gst};msgs.push(`${spd.length} ensemble members`)}).catch(e=>{ens=null;msgs.push('ensemble failed: '+e.message)}),
+    cachedJSON('marine',`https://marine-api.open-meteo.com/v1/marine?latitude=${TIDE_PT.lat}&longitude=${TIDE_PT.lon}&hourly=sea_level_height_msl&past_days=1&forecast_days=7&timezone=Europe%2FLondon`,force).then(j=>{
+      if(j.error)throw new Error(j.reason);omTide={t0:parseLocal(j.hourly.time[0]).getTime(),step:36e5,h:j.hourly.sea_level_height_msl,datum:'MSL',src:'Open-Meteo model'};omTide.ext=extremaOf(omTide)}).catch(e=>{omTide=null})
+  ];
+  STATIONS={};live={};eaGauge=null;
+  if(V().hha&&relayURL()){
+    jobs.push(hha('harwich-predictions.json').then(j=>{
+      const sid=Object.keys(j.predictions)[0];const arr=j.predictions[sid].tides;const step=(arr[1].timestamp-arr[0].timestamp)*1000;
+      const hw=(j.hwlw&&(j.hwlw[sid]?j.hwlw[sid].tides:Object.values(j.hwlw)[0].tides))||[];
+      hhaPred={t0:arr[0].timestamp*1000,step,h:arr.map(a=>a.tide_predicted),datum:'CD',src:'Harwich Haven prediction',ext:hw.map(e=>({t:e.timestamp*1000,h:e.tide_predicted,kind:e.tidal_state})).sort((a,b)=>a.t-b.t)};
+      if(!hhaPred.ext.length)hhaPred.ext=extremaOf(hhaPred);msgs.push('HHA tide')}).catch(e=>{hhaPred=null;msgs.push('HHA tide failed')}));
+    jobs.push(hha('harwich-tides.json').then(j=>{const sid=Object.keys(j.timeseries)[0];hhaTide=j.timeseries[sid].tides}).catch(e=>{hhaTide=null}));
+    Object.keys(HHA_STATIONS).forEach(s=>jobs.push(hha(s+'-met.json').then(j=>{const sid=Object.keys(j.timeseries)[0];const met=j.timeseries[sid].met||[];const S=HHA_STATIONS[s];
+      regStation(s,S.name,'hha',S.lat,S.lon,met.map(r=>({t:r.timestamp*1000,spd:r.wind_speed!=null?r.wind_speed*MS2KN:null,gst:r.gust_speed!=null?r.gust_speed*MS2KN:null,dir:r.wind_direction,p:r.atmos_pressure,temp:r.temperature})),'1 min')}).catch(e=>{})));
+  }else{hhaPred=null;hhaTide=null}
+  if(relayURL()){const R=radiusNm(),dl=R/60,dn=R/(60*Math.cos(V().lat*Math.PI/180));const bbox=`${(V().lat-dl).toFixed(3)},${(V().lon-dn).toFixed(3)},${(V().lat+dl).toFixed(3)},${(V().lon+dn).toFixed(3)}`;
+    jobs.push(getJSON(relayURL()+encodeURIComponent(`https://aviationweather.gov/api/data/metar?bbox=${bbox}&format=json&hours=24`)).then(arr=>{if(!Array.isArray(arr))return;const by={};arr.forEach(o=>{(by[o.icaoId]=by[o.icaoId]||[]).push(o)});
+      Object.keys(by).forEach(id=>{const o=by[id][0];if(distNm(V(),{lat:o.lat,lon:o.lon})>R)return;regStation(id,(o.name||id).replace(/,.*$/,''),'metar',o.lat,o.lon,by[id].map(r=>({t:(r.obsTime||0)*1000,spd:typeof r.wspd==='number'?r.wspd:null,gst:typeof r.wgst==='number'?r.wgst:null,dir:typeof r.wdir==='number'?r.wdir:null,p:typeof r.altim==='number'?r.altim:null,temp:typeof r.temp==='number'?r.temp:null})),'hourly')})}).catch(e=>{msgs.push('airport obs failed')}));
+    if(V().lat>49.5&&V().lat<61&&V().lon>-9&&V().lon<2.5&&!V().hha){jobs.push(getJSON(`https://environment.data.gov.uk/flood-monitoring/id/stations?parameter=level&type=TideGauge&lat=${V().lat}&long=${V().lon}&dist=${Math.round(radiusNm()*NM)}`).then(async j=>{const items=(j.items||[]).filter(s=>s.lat&&s.long).sort((a,b)=>distNm(V(),{lat:a.lat,lon:a.long})-distNm(V(),{lat:b.lat,lon:b.long}));if(!items.length)return;const s=items[0];const m=(s.measures||[]).find(x=>/tidal/i.test(x.qualifier||'')||/level/i.test(x.parameterName||''))||(s.measures||[])[0];if(!m)return;
+      const since=new Date(Date.now()-26*36e5).toISOString().slice(0,19)+'Z';const r=await getJSON(`${m['@id']}/readings?_sorted&since=${since}`);const rd=(r.items||[]).filter(x=>x.value!=null).map(x=>({t:Date.parse(x.dateTime),h:x.value})).sort((a,b)=>a.t-b.t);
+      if(rd.length)eaGauge={name:s.label,lat:s.lat,lon:s.long,dist:distNm(V(),{lat:s.lat,lon:s.long}),unit:m.unitName||'m',readings:rd}}).catch(e=>{}))}}
+  await Promise.all(jobs);
+  const nSt=byDist().length;if(relayURL())msgs.push(nSt?`${nSt} live station${nSt>1?'s':''} within ${radiusNm()} nm`:`no live wind within ${radiusNm()} nm`);else msgs.push('no relay: live data off');
+  fillStationSelect();
+  if(usedCache.length)msgs.push('from cache: '+usedCache.join(', '));
+  if(msgs.some(m=>/limit exceeded/i.test(m)))msgs.push('Open-Meteo allowance hit – resets at midnight UTC; cached data shown where available');
+  const transient=msgs.some(m=>/overloaded|limit exceeded|HTTP 5\d\d|Failed to fetch/i.test(m));
+  clearTimeout(retryT);if(transient&&retryN<3){retryN++;const at=Date.now()+45e3;msgs.push(`retry ${retryN}/3 at ${fmtT(at)}`);retryT=setTimeout(()=>load(true),45e3)}else if(!transient)retryN=0;
+  $('status').textContent=msgs.join(' · ')+' · '+fmtT(new Date());
+  updateLeds();render();
+}
+const hrs=(t,t0)=>(t-t0)/36e5;
+function interp(arr,x){if(!arr)return null;const i=Math.floor(x),f=x-i;if(i<0||i+1>=arr.length){const v=arr[Math.max(0,Math.min(arr.length-1,Math.round(x)))];return (i<-1||i>arr.length)?null:v}
+  const a=arr[i],b=arr[i+1];if(a==null||b==null)return a??b;return a+(b-a)*f}
+function interpDir(dir,x){const i=Math.floor(x),f=x-i;const a=dir[i],b=dir[i+1];if(a==null||b==null)return a??b;
+  const r=Math.PI/180;const ux=(1-f)*Math.sin(a*r)+f*Math.sin(b*r),uy=(1-f)*Math.cos(a*r)+f*Math.cos(b*r);return (Math.atan2(ux,uy)*180/Math.PI+360)%360}
+function circMean(dirs){const r=Math.PI/180;let x=0,y=0;dirs.forEach(d=>{x+=Math.sin(d*r);y+=Math.cos(d*r)});const n=dirs.length;return {mean:(Math.atan2(x,y)*180/Math.PI+360)%360,R:Math.hypot(x,y)/n}}
+const offset=(d,m)=>((d-m+540)%360)-180;
+function consensusAt(t){ // {spd,gst,dir,min,max,vals}
+  if(!wind)return null;const x=hrs(t,wind.t0);if(x<0||x>wind.n-1)return null;const vals=[],gs=[],ds=[];
+  const tps=[];wind.models.forEach(m=>{vals.push(interp(m.spd,x));gs.push(interp(m.gst,x));ds.push(interpDir(m.dir,x));tps.push(m.tmp?interp(m.tmp,x):null)});
+  const ok=vals.filter(v=>v!=null),okg=gs.filter(v=>v!=null),okd=ds.filter(v=>v!=null),okt=tps.filter(v=>v!=null);if(!ok.length)return null;
+  const skyT=(sky&&sky.temp)?interp(sky.temp,hrs(t,sky.t0)):null;
+  return {t,spd:mean(ok),min:Math.min(...ok),max:Math.max(...ok),gst:okg.length?mean(okg):null,dir:okd.length?circMean(okd).mean:null,tmp:okt.length?mean(okt):skyT,vals,gs,ds}}
+function ensAt(t){if(!ens)return null;const x=hrs(t,ens.t0);if(x<0||x>ens.n-1)return null;
+  const s=ens.spd.map(a=>interp(a,x)).filter(v=>v!=null),g=ens.gst.map(a=>interp(a,x)).filter(v=>v!=null),d=ens.dir.map(a=>interpDir(a,x)).filter(v=>v!=null);
+  if(s.length<5)return null;return {s10:pct(s,.1),s25:pct(s,.25),s50:pct(s,.5),s75:pct(s,.75),s90:pct(s,.9),g90:pct(g,.9),dirs:d}}
+
+// ---------- tide ----------
+function tideSrc(){return hhaPred||omTide}
+function tideH(src,t){if(!src)return null;return interp(src.h,(t-src.t0)/src.step)}
+function tideRate(src,t){if(!src)return null;const dt=15*6e4;const a=tideH(src,t-dt),b=tideH(src,t+dt);if(a==null||b==null)return null;return (b-a)/(2*dt/36e5)} // m/h, +rising
+function extremaOf(src){const out=[];const h=src.h;for(let i=1;i<h.length-1;i++){const a=h[i-1],b=h[i],c=h[i+1];if(a==null||b==null||c==null)continue;
+  if(b>a&&b>=c||b<a&&b<=c){const den=a-2*b+c;const d=den?(a-c)/(2*den):0;const dd=Math.max(-1,Math.min(1,d));out.push({kind:b>a?'HW':'LW',t:src.t0+(i+dd)*src.step,h:b-0.25*(a-c)*dd})}}return out}
+const TW=[1,2,3,3,2,1];
+const toCD=(src,h)=>h==null?null:(src.datum==='CD'?h:h+CD_OFFSET);
+function streamAt(src,t,sizePct){ // {kn, dir|null, method}
+  const m=streamMethod();const tp=t-slackMs();const rate=tideRate(src,tp);
+  if(m==='diamond'){const rows=diamondRows();const hws=src.ext.filter(e=>e.kind==='HW');if(!hws.length||!rows.length)return null;
+    let hw=hws[0];hws.forEach(e=>{if(Math.abs(e.t-t)<Math.abs(hw.t-t))hw=e});const hrel=Math.max(rows[0].h,Math.min(rows[rows.length-1].h,(t-hw.t)/36e5));
+    let i=0;while(i<rows.length-2&&rows[i+1].h<=hrel)i++;const a=rows[i],b=rows[i+1];const f=b.h===a.h?0:(hrel-a.h)/(b.h-a.h);
+    const p=Math.max(0,Math.min(1,(sizePct??50)/100));const ra=a.np+(a.sp-a.np)*p,rb=b.np+(b.sp-b.np)*p;const kn=ra+(rb-ra)*f;
+    const r=Math.PI/180;const x=(1-f)*Math.sin(a.dir*r)*ra+f*Math.sin(b.dir*r)*rb,y=(1-f)*Math.cos(a.dir*r)*ra+f*Math.cos(b.dir*r)*rb;const dir=(x||y)?(Math.atan2(x,y)*180/Math.PI+360)%360:a.dir;
+    return {kn:Math.max(0,kn),dir,method:'diamond'}}
+  if(rate==null)return null;
+  if(m==='prism'){const h=toCD(src,tideH(src,tp));if(h==null)return null;const hLW=0.4,hHW=4.0;const fr=Math.max(0,Math.min(1,(h-hLW)/(hHW-hLW)));
+    const Aup=(num('aLW',2)+(num('aHW',8)-num('aLW',2))*fr)*1e6;const Q=Aup*rate/3600; // m³/s
+    const Axs=num('chW',250)*Math.max(0.5,num('chD',6)+h)+num('flW',800)*Math.max(0,h-num('flH',1.5));
+    return {kn:Math.abs(Q/Axs)*MS2KN,dir:null,method:'prism'}}
+  return {kn:Math.abs(rate)*kStream(),dir:null,method:'factor'}}
+function tideState(t){const src=tideSrc();if(!src||!src.ext.length)return null;const ex=src.ext;const tp=t-slackMs();let P=null,N=null;for(const e of ex){if(e.t<=tp)P=e;else{N=e;break}}
+  if(!P||!N)return null;const I=N.t-P.t;const hr=Math.min(5,Math.floor((tp-P.t)/(I/6)));const range=Math.abs(N.h-P.h);const rate=tideRate(src,tp);
+  const size=(src.datum==='CD')?Math.max(0,Math.min(100,(range-NEAP)/(SPR-NEAP)*100)):lunar(t).pct;const sv=streamAt(src,t,size);
+  return {prev:P,next:N,hour:hr+1,frac:TW[hr],range,state:N.kind==='HW'?'Flood':'Ebb',turn:N.t+slackMs(),h:tideH(src,t),rate,stream:sv?sv.kn:null,setDir:sv?sv.dir:null,method:sv?sv.method:null,datum:src.datum}}
+function lunar(t){const NM=Date.UTC(2000,0,6,18,14),syn=29.530588853;const age=(((t-NM)/864e5)%syn+syn)%syn;const lag=2;const phi=2*Math.PI*((age-lag)/syn);const p=(Math.cos(2*phi)+1)/2*100;
+  const nextS=[lag,lag+syn/2,lag+syn].map(a=>a-age).filter(x=>x>=-0.5).sort((a,b)=>a-b)[0];const nextN=[lag+syn/4,lag+3*syn/4,lag+5*syn/4].map(a=>a-age).filter(x=>x>=-0.5).sort((a,b)=>a-b)[0];return {pct:p,nextS,nextN}}
+function tideSize(t){const ts=tideState(t);if(ts&&ts.datum==='CD'){const p=Math.max(0,Math.min(100,(ts.range-NEAP)/(SPR-NEAP)*100));return {pct:p,label:p>=70?'Springs':p<=30?'Neaps':'Mid-cycle',sub:`range ${ts.range.toFixed(1)} m (neaps ${NEAP}, springs ${SPR})`}}
+  const L=lunar(t);const p=L.pct;
+  return {pct:p,label:p>=70?'Springs':p<=30?'Neaps':'Mid-cycle',sub:(L.nextS<L.nextN?`springs in ${L.nextS.toFixed(0)} d`:`neaps in ${L.nextN.toFixed(0)} d`)+(ts?` · model range ${ts.range.toFixed(1)} m`:'')+' · lunar estimate'}}
+
+// ---------- observations ----------
+function obsSeries(key){
+  const k=key||stationKey();const st=k?STATIONS[k]:null;if(!st||!st.series.length)return null;const s=st.series;
+  if(st.kind!=='hha')return s.map(r=>({t:r.t,spd:r.spd,gst:r.gst,dir:r.dir,temp:r.temp}));
+  const out=[];let bucket=null;
+  for(const r of s){const t=Math.floor(r.t/6e5)*6e5;if(!bucket||bucket.t!==t){if(bucket)out.push(fin(bucket));bucket={t,s:[],g:[],x:0,y:0,tp:[]}}
+    if(r.spd!=null)bucket.s.push(r.spd);if(r.gst!=null)bucket.g.push(r.gst);if(r.dir!=null){const a=r.dir*Math.PI/180;bucket.x+=Math.sin(a);bucket.y+=Math.cos(a)}if(r.temp!=null)bucket.tp.push(r.temp)}
+  if(bucket)out.push(fin(bucket));return out;
+  function fin(b){return {t:b.t+3e5,spd:b.s.length?mean(b.s):null,gst:b.g.length?Math.max(...b.g):null,dir:(b.x||b.y)?(Math.atan2(b.x,b.y)*180/Math.PI+360)%360:null,temp:b.tp.length?mean(b.tp):null}}}
+function latest(s){const st=s?STATIONS[s]:null;if(!st)return null;const a=st.series.filter(q=>q.spd!=null&&q.dir!=null);if(!a.length)return null;const r=a[a.length-1];const h3=a.find(q=>q.t>=r.t-3*36e5);
+  return {t:r.t,spd:r.spd,gst:r.gst??r.spd,dir:r.dir,p:r.p??null,dp:(h3&&r.p!=null&&h3.p!=null)?r.p-h3.p:null,temp:r.temp??null,gmax:Math.max(...a.filter(q=>q.t>=r.t-36e5).map(q=>q.gst||q.spd||0)),kind:st.kind}}
+function manualObs(){const sp=parseFloat($('obsSpeed').value),d=parseFloat($('obsDir').value),g=parseFloat($('obsGust').value),t=$('obsTime').value;
+  if(isNaN(sp)||!t)return null;const [hh,mm]=t.split(':').map(Number);const day=localDate(dateEl.value);
+  return {spd:sp,dir:isNaN(d)?null:d,gst:isNaN(g)?null:g,t:new Date(day.getFullYear(),day.getMonth(),day.getDate(),hh,mm).getTime()}}
+function verify(fromT){ // consensus/model error vs observed since fromT (default midnight)
+  if(!stationKey())return null;const o=obsSeries();if(!o||!wind)return null;const day=fromT??today.getTime();const pts=o.filter(p=>p.t>=day&&p.t<=Date.now());if(pts.length<6)return null;
+  const errs={cons:{s:[],d:[]}};wind.models.forEach(m=>errs[m.id]={s:[],d:[]});
+  pts.forEach(p=>{const c=consensusAt(p.t);if(!c||p.spd==null)return;errs.cons.s.push(c.spd-p.spd);if(c.dir!=null&&p.dir!=null&&p.spd>3)errs.cons.d.push(offset(c.dir,p.dir));
+    wind.models.forEach((m,i)=>{if(c.vals[i]!=null){errs[m.id].s.push(c.vals[i]-p.spd);if(c.ds[i]!=null&&p.dir!=null&&p.spd>3)errs[m.id].d.push(offset(c.ds[i],p.dir))}})});
+  const sum=e=>({s:e.s.length?mean(e.s):null,d:e.d.length?mean(e.d):null,mae:e.s.length?mean(e.s.map(Math.abs)):null});
+  const out={n:pts.length,since:pts[0].t,cons:sum(errs.cons)};wind.models.forEach(m=>out[m.id]=sum(errs[m.id]));return out}
+
+// ---------- window stats ----------
+function windowStats(){
+  if(!wind)return null;
+  const day=localDate(dateEl.value);const q0=+startEl.value,q1=+endEl.value;
+  const tS=day.getTime()+q0*9e5,tE=day.getTime()+q1*9e5;
+  const per=wind.models.map(m=>{
+    let s=[],g=[],dx=0,dy=0,k=0;const r=Math.PI/180;
+    for(let t=tS;t<=tE;t+=9e5){const x=hrs(t,wind.t0);if(x<0||x>wind.n-1)continue;const v=interp(m.spd,x),gv=interp(m.gst,x),d=interpDir(m.dir,x);if(v==null||d==null)continue;s.push(v);if(gv!=null)g.push(gv);dx+=Math.sin(d*r);dy+=Math.cos(d*r);k++}
+    if(!k)return null;
+    return {m,spd:mean(s),spdMin:Math.min(...s),spdMax:Math.max(...s),gst:g.length?mean(g):null,gstMax:g.length?Math.max(...g):null,dir:(Math.atan2(dx,dy)*180/Math.PI+360)%360};
+  }).filter(Boolean);
+  if(!per.length)return {tS,tE,per:[],none:true};
+  const cm=circMean(per.map(p=>p.dir));
+  const spd=per.map(p=>p.spd),gst=per.filter(p=>p.gst!=null).map(p=>p.gst);
+  const offs=per.map(p=>offset(p.dir,cm.mean));
+  const dirSpread=Math.max(...offs)-Math.min(...offs);const spdRange=Math.max(...spd)-Math.min(...spd);
+  const agree=(dirSpread<=20&&spdRange<=4)?'good':(dirSpread<=45&&spdRange<=8)?'warn':'bad';
+  // ensemble over the window: per-member window mean speed, max gust
+  let E=null;if(ens){const ms=[],mg=[];for(let k=0;k<ens.spd.length;k++){let s=[],g=0,n=0;for(let t=tS;t<=tE;t+=9e5){const x=hrs(t,ens.t0);if(x<0||x>ens.n-1)continue;const v=interp(ens.spd[k],x),gv=interp(ens.gst[k],x);if(v!=null){s.push(v);n++}if(gv!=null)g=Math.max(g,gv)}if(n){ms.push(mean(s));mg.push(g)}}
+    if(ms.length>5)E={n:ms.length,s10:pct(ms,.1),s50:pct(ms,.5),s90:pct(ms,.9),pGust:mg.filter(g=>g>=gustThr()).length/mg.length}}
+  return {tS,tE,per,dir:cm.mean,R:cm.R,offMin:Math.min(...offs),offMax:Math.max(...offs),dirSpread,spd:mean(spd),spdMin:Math.min(...spd),spdMax:Math.max(...spd),
+    gst:gst.length?mean(gst):null,gstMin:gst.length?Math.min(...gst):null,gstMax:gst.length?Math.max(...gst):null,agree,E};
+}
+function shifts(st){ // consensus direction shifts across the day, with model timing spread
+  if(!wind||!st)return [];const {d0,d1}=dayBounds();const pts=[];for(let t=d0;t<=d1;t+=18e5){const c=consensusAt(t);if(c&&c.dir!=null&&c.spd>2)pts.push({t,dir:c.dir,spd:c.spd})}
+  if(pts.length<3)return [];const out=[];let i=0;const MIN=2.5; // degrees per 30-min step: slower than 5°/h is drift, not a shift
+  while(i<pts.length-1){const d0=offset(pts[i+1].dir,pts[i].dir);if(Math.abs(d0)<MIN){i++;continue}const sign=Math.sign(d0);let j=i+1;let tot=d0;
+    while(j<pts.length-1){const d=offset(pts[j+1].dir,pts[j].dir);if(Math.sign(d)!==sign||Math.abs(d)<MIN)break;tot+=d;j++}
+    if(Math.abs(tot)>=10){const from=pts[i].dir,to=pts[j].dir,mid=(from+tot/2+360)%360;
+      const times=wind.models.map(m=>{let best=null;for(let t=pts[i].t;t<=pts[j].t;t+=9e5){const x=hrs(t,wind.t0);const d=interpDir(m.dir,x);if(d==null)continue;const o=Math.abs(offset(d,mid));if(best==null||o<best.o)best={o,t}}return best&&best.o<Math.abs(tot)/2?best.t:null}).filter(Boolean);
+      out.push({t0:pts[i].t,t1:pts[j].t,deg:tot,from,to,tMin:times.length?Math.min(...times):null,tMax:times.length?Math.max(...times):null,nModels:times.length,inWindow:pts[j].t>=st.tS-36e5&&pts[i].t<=st.tE+36e5})}
+    i=j}
+  return out}
+
+// ---------- render ----------
+function render(){
+  syncSliders();
+  const st=windowStats();const errs=[];
+  [['brief',()=>renderBrief(st)],['tiles',()=>renderTiles(st)],['live',()=>renderLive()],['liveChart',()=>renderLiveChart(st)],['timeline',()=>renderTimeline(st)],['shifts',()=>renderShifts(st)],['compass',()=>renderCompass(st)],['speedbar',()=>renderSpeed(st)],['modelTable',()=>renderTable(st)],['streamNote',()=>renderStreamNote(st)],['skyBrief',()=>renderSkyBrief(st)],['skyChart',()=>renderSky(st)]].forEach(([id,fn])=>{try{fn()}catch(e){errs.push(id+': '+(e&&e.message||e));const el=$(id);if(el)el.innerHTML=`<p class="err">This panel hit an error (${(e&&e.message||e)}). Pull to refresh; if it persists, send this message to Claude.</p>`}});
+  if(errs.length)console.error('render errors',errs);
+  if($('pgRace').classList.contains('on')){try{renderMap()}catch(e){console.error(e)}}
+}
+function renderLiveChart(st){
+  const el=$('liveChart'),tag=$('accTag');if(!wind){el.innerHTML='<p class="caption">Waiting for forecast…</p>';return}
+  const now=Date.now();const a=now-6*36e5,b=now+6*36e5;
+  const W=Math.max(320,el.clientWidth||Math.min(1068,window.innerWidth-32)),ml=34,mr=14,mt=22,sh=Math.max(150,Math.min(220,W*0.3)),gap=22,dh=90,mb=24;const H=mt+sh+gap+dh+mb,pw=W-ml-mr;
+  const X=t=>ml+pw*(t-a)/(b-a);
+  const cons=[];for(let t=a;t<=b;t+=9e5){const c=consensusAt(t);if(c)cons.push(c)}
+  const obsAll=obsSeries()||[];const obs=obsAll.filter(p=>p.t>=a&&p.t<=now);
+  const mo=(!relayURL())?manualObs():null;
+  let maxK=Math.max(8,...cons.map(c=>Math.max(c.spd,c.gst||0)),...obs.map(p=>Math.max(p.spd||0,p.gst||0)));if(mo&&mo.t>=a&&mo.t<=b)maxK=Math.max(maxK,mo.gst||mo.spd);maxK=Math.ceil((maxK+2)/5)*5;
+  const Y=k=>mt+sh*(1-k/maxK);
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Observed wind against consensus, last six hours and next six">`;
+  // race window
+  const bottomY=mt+sh+gap+dh;
+  if(st&&st.tE>a&&st.tS<b){const x0=X(Math.max(st.tS,a)),x1=X(Math.min(st.tE,b));s+=`<rect x="${x0}" y="${mt-14}" width="${x1-x0}" height="${bottomY-mt+14}" fill="var(--window)"/>`;
+    const ly=mt+sh+gap+dh-6;if(x1-x0<150)s+=`<text class="tl-lbl" x="${(x0+x1)/2}" y="${ly}" font-size="12" fill="var(--ink)" text-anchor="middle">Race ${fmtT(st.tS)}–${fmtT(st.tE)}</text>`;
+    else{if(st.tS>=a&&st.tS<=b)s+=`<text class="tl-lbl" x="${X(st.tS)+4}" y="${ly}" font-size="12" fill="var(--ink)">Start ${fmtT(st.tS)}</text>`;
+    if(st.tE>=a&&st.tE<=b)s+=`<text class="tl-lbl" x="${X(st.tE)-4}" y="${ly}" font-size="12" fill="var(--ink)" text-anchor="end">Finish ${fmtT(st.tE)}</text>`}}
+  // grid
+  const kStep=maxK>40?10:5;for(let k=0;k<=maxK;k+=kStep)s+=`<line x1="${ml}" y1="${Y(k)}" x2="${W-mr}" y2="${Y(k)}" stroke="var(--line-2)"/><text x="${ml-6}" y="${Y(k)+4}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${k}</text>`;
+  const lstep=(pw/12>=55?1:2)*36e5;const t0=Math.ceil(a/lstep)*lstep;for(let t=t0;t<=b;t+=lstep){s+=`<line x1="${X(t)}" y1="${mt}" x2="${X(t)}" y2="${bottomY}" stroke="var(--line-2)"/><text x="${X(t)}" y="${H-mb+16}" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--ink-2)">${fmtT(t)}</text>`}
+  // past shading
+  s+=`<rect x="${ml}" y="${mt}" width="${X(now)-ml}" height="${bottomY-mt}" fill="var(--ink)" fill-opacity=".025"/>`;
+  const path=(pts,fn)=>{let d='',pen=false;pts.forEach(p=>{const v=fn(p);if(v==null){pen=false;return}d+=(pen?'L':'M')+X(p.t).toFixed(1)+','+Y(Math.min(v,maxK)).toFixed(1);pen=true});return d};
+  if(cons.length){s+=`<path d="${path(cons,c=>c.gst)}" fill="none" stroke="var(--gust)" stroke-width="1.8" stroke-dasharray="5 4" stroke-opacity=".9"/>`;s+=`<path d="${path(cons,c=>c.spd)}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round"/>`;
+    for(let t=t0;t<=b;t+=lstep){const c=consensusAt(t);if(!c||X(t)<ml+18)continue;s+=`<text class="tl-lbl" x="${X(t)}" y="${Y(c.spd)-8}" text-anchor="middle" font-size="15" fill="var(--ink)">${c.spd.toFixed(0)}</text>`}}
+  const sec=secondaryKey();if(sec){const o2=(obsSeries(sec)||[]).filter(p=>p.t>=a&&p.t<=now&&p.spd!=null);if(o2.length>1)s+=`<path d="${path(o2,p=>p.spd)}" fill="none" stroke="var(--ink-2)" stroke-width="1.3" stroke-opacity=".8"/>`}
+  if(obs.length>1){s+=`<path d="${path(obs,p=>p.gst)}" fill="none" stroke="var(--obs)" stroke-width="1.2" stroke-dasharray="2 3"/>`;s+=`<path d="${path(obs,p=>p.spd)}" fill="none" stroke="var(--obs)" stroke-width="2.2" stroke-linejoin="round"/>`;const l=obs[obs.length-1];if(l.spd!=null)s+=`<circle cx="${X(l.t)}" cy="${Y(l.spd)}" r="4.5" fill="var(--bg)" stroke="var(--obs)" stroke-width="2"/><text class="tl-lbl" x="${X(l.t)-8}" y="${Y(l.spd)+5}" text-anchor="end" font-size="15" fill="var(--obs)">${l.spd.toFixed(0)}</text>`}
+  if(mo&&mo.t>=a&&mo.t<=b){s+=`<circle cx="${X(mo.t)}" cy="${Y(Math.min(mo.spd,maxK))}" r="6" fill="var(--bg)" stroke="var(--obs)" stroke-width="2.5"/>`}
+  // direction panel
+  const dy0=mt+sh+gap;const dirs=cons.map(c=>c.dir).filter(d=>d!=null);const cen=dirs.length?circMean(dirs).mean:(st?st.dir:0);
+  let span=30;cons.forEach(c=>{if(c.dir!=null)span=Math.max(span,Math.abs(offset(c.dir,cen))+10)});obs.forEach(p=>{if(p.dir!=null&&p.spd>3)span=Math.max(span,Math.abs(offset(p.dir,cen))+8)});span=Math.min(180,Math.ceil(span/15)*15);
+  const DY=o=>dy0+dh*(0.5-o/(2*span));const dStep=span>90?45:span>45?30:15;
+  for(let o=-span;o<=span;o+=dStep){s+=`<line x1="${ml}" y1="${DY(o)}" x2="${W-mr}" y2="${DY(o)}" stroke="${o===0?'var(--line)':'var(--line-2)'}"/><text x="${ml-6}" y="${DY(o)+4}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${comp(cen+o)}</text>`}
+  const dpath=(pts,fn)=>{let d='',pen=false;pts.forEach(p=>{const v=fn(p);if(v==null){pen=false;return}d+=(pen?'L':'M')+X(p.t).toFixed(1)+','+DY(Math.max(-span,Math.min(span,offset(v,cen)))).toFixed(1);pen=true});return d};
+  s+=`<path d="${dpath(cons,c=>c.dir)}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>`;
+  if(sec){const o2=(obsSeries(sec)||[]).filter(p=>p.t>=a&&p.t<=now&&p.dir!=null&&p.spd>3);if(o2.length>1)s+=`<path d="${dpath(o2,p=>p.dir)}" fill="none" stroke="var(--ink-2)" stroke-width="1.2" stroke-opacity=".8"/>`}
+  const od=obs.filter(p=>p.dir!=null&&p.spd>3);if(od.length>1)s+=`<path d="${dpath(od,p=>p.dir)}" fill="none" stroke="var(--obs)" stroke-width="2"/>`;
+  if(mo&&mo.dir!=null&&mo.t>=a&&mo.t<=b)s+=`<circle cx="${X(mo.t)}" cy="${DY(Math.max(-span,Math.min(span,offset(mo.dir,cen))))}" r="5" fill="var(--bg)" stroke="var(--obs)" stroke-width="2"/>`;
+  for(let t=t0;t<=b;t+=lstep){const c=consensusAt(t);if(!c||c.dir==null||X(t)<ml+18)continue;s+=`<text class="tl-lbl" x="${X(t)}" y="${DY(offset(c.dir,cen))-7}" text-anchor="middle" font-size="11" fill="var(--ink)">${c.dir.toFixed(0)}°</text>`}
+  s+=`<text x="${W-mr}" y="${dy0-6}" text-anchor="end" font-size="9.5" fill="var(--ink-3)" font-family="var(--mono)">DIR · UP = VEER</text>`;
+  // now line
+  s+=`<line x1="${X(now)}" y1="${mt-14}" x2="${X(now)}" y2="${bottomY}" stroke="var(--obs)" stroke-width="1.5"/><text class="tl-lbl" x="${X(now)}" y="${mt-4}" text-anchor="middle" font-size="12" fill="var(--obs)">NOW ${fmtT(now)}</text>`;
+  s+=`<text x="${ml+2}" y="${mt+12}" font-family="var(--mono)" font-size="9.5" fill="var(--ink-3)" letter-spacing="2">OBSERVED · PAST 6 H</text><text x="${W-mr}" y="${mt+12}" text-anchor="end" font-family="var(--mono)" font-size="9.5" fill="var(--ink-3)" letter-spacing="2">FORECAST · NEXT 6 H</text>`;
+  s+='</svg>';el.innerHTML=s;
+  // accuracy
+  const v=verify(a);const pk0=stationKey();const stn=pk0?STATIONS[pk0].name:'station';
+  if(pk0&&v&&v.cons.s!=null){const meanObs=obs.filter(p=>p.spd!=null).reduce((m,p)=>m+p.spd,0)/Math.max(1,obs.filter(p=>p.spd!=null).length);
+    const accS=Math.max(0,Math.min(100,100*(1-v.cons.mae/Math.max(3,meanObs))));const dAbs=v.cons.d!=null?Math.abs(v.cons.d):null;const accD=dAbs!=null?Math.max(0,Math.min(100,100*(1-dAbs/90))):null;
+    const cls=accS>=80?'good':accS>=60?'warn':'bad';
+    tag.innerHTML=`<span class="pill ${cls}">${accS.toFixed(0)}% speed${accD!=null?' · '+accD.toFixed(0)+'% dir':''}</span>`;
+    const sk=secondaryKey();const L2=sk?latest(sk):null;const others=L2?`${STATIONS[sk].name} ${L2.spd.toFixed(0)} kn ${comp(L2.dir)}`:'';
+    $('accCap').innerHTML=`<b>${stn}</b> is the bold trace${$('station').value==='upwind'?' (most upwind for the forecast direction)':$('station').value==='auto'||!$('station').value?' (nearest station)':''}${others?'; thin grey line: '+others:''}.<br>Last 6 h against ${stn}: consensus ran ${v.cons.s>=0?'+':''}${v.cons.s.toFixed(1)} kn (typical miss ${v.cons.mae.toFixed(1)} kn)${v.cons.d!=null?`, ${Math.abs(v.cons.d).toFixed(0)}° ${v.cons.d>=0?'right':'left'}`:''} over ${v.n} readings. Right of the line is the consensus forecast for the next 6 hours${st&&st.tE>now&&st.tS<b?', race window shaded':''}.`}
+  else{tag.textContent='Observed vs consensus · ±6 h';$('accCap').textContent=relayURL()?(pk0?'Accuracy appears once an hour or so of station readings has built up.':`No live wind station within ${radiusNm()} nm; the chart shows the consensus forecast only. Tap the venue name to widen the radius.`):'Set the relay URL in Settings to add the observed trace and the accuracy score; the right half is the consensus forecast for the next 6 hours.'}
+}
+
+// ---------- sky (temperature, rain, cloud, pressure) ----------
+const WMO={0:'clear',1:'mainly clear',2:'partly cloudy',3:'overcast',45:'fog',48:'freezing fog',51:'light drizzle',53:'drizzle',55:'heavy drizzle',56:'freezing drizzle',57:'freezing drizzle',61:'light rain',63:'rain',65:'heavy rain',66:'freezing rain',67:'freezing rain',71:'light snow',73:'snow',75:'heavy snow',77:'snow grains',80:'light showers',81:'showers',82:'heavy showers',85:'snow showers',86:'heavy snow showers',95:'thunderstorms',96:'thunder with hail',99:'thunder with heavy hail'};
+function skyAt(t){if(!sky)return null;const x=hrs(t,sky.t0);if(x<0||x>sky.n-1)return null;const i=Math.round(x);const g=k=>sky[k]?sky[k][i]:null;
+  return {t,temp:interp(sky.temp,x),feel:interp(sky.feel,x),rain:g('rain'),pop:g('pop'),cloud:interp(sky.cloud,x),code:g('code'),pres:interp(sky.pres,x),vis:g('vis'),rh:interp(sky.rh,x)}}
+function renderSkyBrief(st){
+  const el=$('skyBrief');if(!st||st.none||!sky){el.innerHTML='<h2>Sky over the race</h2><p>'+(sky?'No forecast for that window yet.':'Waiting for the weather forecast…')+'</p>';return}
+  const pts=[];for(let t=st.tS;t<=st.tE;t+=36e5){const p=skyAt(t);if(p)pts.push(p)}if(!pts.length){el.innerHTML='<h2>Sky over the race</h2><p>No forecast for that window yet.</p>';return}
+  const temps=pts.map(p=>p.temp).filter(v=>v!=null),feels=pts.map(p=>p.feel).filter(v=>v!=null);
+  const rainTot=pts.reduce((m,p)=>m+(p.rain||0),0),popMax=Math.max(...pts.map(p=>p.pop??0)),cloudAv=mean(pts.map(p=>p.cloud??0));
+  const codes=pts.map(p=>p.code).filter(v=>v!=null);const worst=codes.length?Math.max(...codes):null;const commonest=codes.length?codes.sort((a,b)=>codes.filter(v=>v===a).length-codes.filter(v=>v===b).length).pop():null;
+  const p0=pts[0],p1=pts[pts.length-1];const dp=(p1.pres!=null&&p0.pres!=null)?p1.pres-p0.pres:null;
+  const sunny=cloudAv<35,grey=cloudAv>75;
+  let s1=`<b>${(WMO[commonest]||'variable').replace(/^./,c=>c.toUpperCase())}</b>${worst!=null&&worst!==commonest&&worst>=51?`, with ${WMO[worst]} possible`:''}`;
+  s1+=`; cloud ${cloudAv.toFixed(0)}% ${sunny?'(mostly sunny)':grey?'(grey)':'(mixed)'}.`;
+  if(rainTot>=0.2||popMax>=40)s1+=` Rain: ${popMax.toFixed(0)}% chance, about ${rainTot.toFixed(1)} mm over the race${rainTot>=3?', wet-weather gear':rainTot>=1?', a jacket':''}.`;else s1+=' Dry, rain unlikely.';
+  let s2=`<b>${Math.min(...temps).toFixed(0)}–${Math.max(...temps).toFixed(0)} °C</b>`;if(feels.length){const f=Math.min(...feels);if(f<Math.min(...temps)-2)s2+=`, feeling like ${f.toFixed(0)} °C in the breeze`}s2+='.';
+  const fog=codes.some(c=>c===45||c===48);const visMin=Math.min(...pts.map(p=>p.vis??99999));
+  s2+=fog||visMin<4000?` Visibility poor at times (${(visMin/1000).toFixed(1)} km)${fog?', fog':''}.`:visMin<10000?` Visibility moderate (${(visMin/1000).toFixed(0)} km).`:' Visibility good.';
+  let s3=p0.pres!=null?`Pressure ${p0.pres.toFixed(0)} hPa${dp!=null?(Math.abs(dp)<1?', steady':dp>0?`, rising ${dp.toFixed(1)}`:`, falling ${Math.abs(dp).toFixed(1)}`):''}${dp!=null&&dp<=-3?' – a front or trough coming through, expect the wind to shift':''}.`:'';
+  const isToday=localDate(dateEl.value).getTime()===today.getTime();const pk=stationKey();const L=isToday&&pk?latest(pk):null;
+  if(L&&L.temp!=null){const c=skyAt(Date.now());if(c&&c.temp!=null){const d=L.temp-c.temp;s3+=` ${STATIONS[pk].name} reads ${L.temp.toFixed(1)} °C now, ${Math.abs(d)<1.5?'in line with the forecast':`${Math.abs(d).toFixed(1)} °C ${d>0?'warmer':'colder'} than forecast`}${d>=2.5&&sunny?'; a sea breeze is more likely this afternoon':''}.`}}
+  el.innerHTML=`<h2>Sky over the race<span class="tag">${fmtT(st.tS)}–${fmtT(st.tE)}</span></h2><p>${s1}</p><p>${s2}</p>${s3?`<p>${s3}</p>`:''}`;
+}
+function renderSky(st){
+  const el=$('skyChart'),tb=$('skyTable');if(!sky||!st){el.innerHTML='<p class="caption">Waiting for the weather forecast…</p>';tb.innerHTML='';return}
+  const {d0,d1}=dayBounds();const a=d0,b=d1;
+  const W=Math.max(320,el.clientWidth||Math.min(1068,window.innerWidth-32)),ml=36,mr=36,mt=20,th=Math.max(130,Math.min(190,W*0.26)),gap=22,rh=90,ph=70,mb=26;const H=mt+th+gap+rh+gap+ph+mb,pw=W-ml-mr;
+  const X=t=>ml+pw*(t-a)/(b-a);
+  const pts=[];for(let t=a;t<=b;t+=36e5){const p=skyAt(t);if(p)pts.push(p)}
+  const isToday=localDate(dateEl.value).getTime()===today.getTime();const pk=stationKey();const S=isToday&&pk?STATIONS[pk]:null;const obsT=S?S.series.filter(r=>r.temp!=null&&r.t>=a&&r.t<=b):[];const obsP=S?S.series.filter(r=>r.p!=null&&r.t>=a&&r.t<=b):[];
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Temperature, rain, cloud and pressure for the race day">`;
+  const bottom=mt+th+gap+rh+gap+ph;
+  s+=`<rect x="${X(st.tS)}" y="${mt-10}" width="${Math.max(0,X(st.tE)-X(st.tS))}" height="${bottom-mt+10}" fill="var(--window)"/>`;
+  const lstep=(pw/24>=40?2:3)*36e5;for(let t=a;t<=b;t+=lstep){s+=`<line x1="${X(t)}" y1="${mt}" x2="${X(t)}" y2="${bottom}" stroke="var(--line-2)"/><text x="${X(t)}" y="${H-mb+16}" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--ink-2)">${fmtT(t)}</text>`}
+  if(pts.length){
+    // temperature panel
+    const temps=pts.map(p=>p.temp).concat(pts.map(p=>p.feel)).concat(obsT.map(r=>r.temp)).filter(v=>v!=null);const lo=Math.floor(Math.min(...temps)-1),hi=Math.ceil(Math.max(...temps)+1);const TY=v=>mt+th*(1-(v-lo)/(hi-lo));
+    for(let v=lo;v<=hi;v+=(hi-lo>12?5:2)){s+=`<line x1="${ml}" y1="${TY(v)}" x2="${W-mr}" y2="${TY(v)}" stroke="var(--line-2)"/><text x="${ml-6}" y="${TY(v)+4}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${v}°</text>`}
+    // cloud shading along the top of temp panel
+    pts.forEach((p,i)=>{if(p.cloud==null)return;const x0=X(p.t-18e5),x1=X(p.t+18e5);s+=`<rect x="${Math.max(ml,x0)}" y="${mt}" width="${Math.max(0,Math.min(W-mr,x1)-Math.max(ml,x0))}" height="10" fill="var(--ink-2)" fill-opacity="${(p.cloud/100*0.6).toFixed(2)}"/>`});
+    s+=`<text x="${W-mr}" y="${mt-3}" text-anchor="end" font-family="var(--mono)" font-size="9" fill="var(--ink-3)">CLOUD ↑ · AIR °C</text>`;
+    const fp=pts.filter(p=>p.feel!=null);if(fp.length>1)s+=`<path d="${fp.map((p,i)=>(i?'L':'M')+X(p.t).toFixed(1)+','+TY(p.feel).toFixed(1)).join('')}" fill="none" stroke="var(--ink-3)" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+    const tp=pts.filter(p=>p.temp!=null);s+=`<path d="${tp.map((p,i)=>(i?'L':'M')+X(p.t).toFixed(1)+','+TY(p.temp).toFixed(1)).join('')}" fill="none" stroke="var(--temp)" stroke-width="3" stroke-linejoin="round"/>`;
+    if(obsT.length>1)s+=`<path d="${obsT.map((r,i)=>(i?'L':'M')+X(r.t).toFixed(1)+','+TY(r.temp).toFixed(1)).join('')}" fill="none" stroke="var(--obs)" stroke-width="2"/>`;
+    for(let t=a;t<=b;t+=lstep){const p=skyAt(t);if(!p||p.temp==null||X(t)<ml+16)continue;s+=`<text class="tl-lbl" x="${X(t)}" y="${TY(p.temp)-8}" text-anchor="middle" font-size="14" fill="var(--ink)">${p.temp.toFixed(0)}°</text>`}
+    // rain panel
+    const ry0=mt+th+gap;const rmax=Math.max(1,Math.ceil(Math.max(...pts.map(p=>p.rain||0))*1.2));const RY=v=>ry0+rh*(1-v/rmax);const PY=v=>ry0+rh*(1-v/100);
+    s+=`<line x1="${ml}" y1="${ry0+rh}" x2="${W-mr}" y2="${ry0+rh}" stroke="var(--line)"/><text x="${ml-6}" y="${ry0+10}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${rmax}</text><text x="${ml-6}" y="${ry0+rh}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">0</text><text x="${ml-6}" y="${ry0+rh/2+4}" text-anchor="end" font-family="var(--mono)" font-size="9" fill="var(--ink-3)">mm</text>`;
+    s+=`<text x="${W-mr+6}" y="${ry0+10}" font-family="var(--mono)" font-size="10" fill="var(--tide)">100%</text><text x="${W-mr+6}" y="${ry0+rh}" font-family="var(--mono)" font-size="10" fill="var(--tide)">0</text>`;
+    pts.forEach(p=>{if(!p.rain)return;const x0=X(p.t-18e5)+1,w=Math.max(2,X(p.t+18e5)-X(p.t-18e5)-2);s+=`<rect x="${x0}" y="${RY(p.rain)}" width="${w}" height="${ry0+rh-RY(p.rain)}" fill="var(--tide)" fill-opacity=".55"/>`});
+    const pp=pts.filter(p=>p.pop!=null);if(pp.length>1)s+=`<path d="${pp.map((p,i)=>(i?'L':'M')+X(p.t).toFixed(1)+','+PY(p.pop).toFixed(1)).join('')}" fill="none" stroke="var(--tide)" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+    s+=`<text x="${W-mr}" y="${ry0-4}" text-anchor="end" font-family="var(--mono)" font-size="9" fill="var(--ink-3)">RAIN mm/h · CHANCE %</text>`;
+    // pressure panel
+    const py0=ry0+rh+gap;const pres=pts.map(p=>p.pres).concat(obsP.map(r=>r.p)).filter(v=>v!=null);if(pres.length){const plo=Math.floor(Math.min(...pres)-1),phi=Math.ceil(Math.max(...pres)+1);const QY=v=>py0+ph*(1-(v-plo)/(phi-plo));
+      s+=`<line x1="${ml}" y1="${py0+ph}" x2="${W-mr}" y2="${py0+ph}" stroke="var(--line)"/><text x="${ml-6}" y="${py0+10}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${phi}</text><text x="${ml-6}" y="${py0+ph}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${plo}</text><text x="${W-mr}" y="${py0-4}" text-anchor="end" font-family="var(--mono)" font-size="9" fill="var(--ink-3)">PRESSURE hPa</text>`;
+      const prp=pts.filter(p=>p.pres!=null);s+=`<path d="${prp.map((p,i)=>(i?'L':'M')+X(p.t).toFixed(1)+','+QY(p.pres).toFixed(1)).join('')}" fill="none" stroke="var(--accent)" stroke-width="2"/>`;
+      if(obsP.length>1)s+=`<path d="${obsP.map((r,i)=>(i?'L':'M')+X(r.t).toFixed(1)+','+QY(r.p).toFixed(1)).join('')}" fill="none" stroke="var(--obs)" stroke-width="2"/>`}
+    [[st.tS,'Start'],[st.tE,'Finish']].forEach(([t,l])=>{s+=`<line x1="${X(t)}" y1="${mt-10}" x2="${X(t)}" y2="${bottom}" stroke="var(--ink-2)" stroke-dasharray="3 3"/>`});
+    const tight=(X(st.tE)-X(st.tS))<150;if(tight)s+=`<text class="tl-lbl" x="${(X(st.tS)+X(st.tE))/2}" y="${mt-12}" text-anchor="middle" font-size="12" fill="var(--ink)">Race ${fmtT(st.tS)}–${fmtT(st.tE)}</text>`;else{s+=`<text class="tl-lbl" x="${X(st.tS)+4}" y="${mt-12}" font-size="12" fill="var(--ink)">Start ${fmtT(st.tS)}</text><text class="tl-lbl" x="${X(st.tE)-4}" y="${mt-12}" text-anchor="end" font-size="12" fill="var(--ink)">Finish ${fmtT(st.tE)}</text>`}
+    const now=Date.now();if(now>=a&&now<=b)s+=`<line x1="${X(now)}" y1="${mt-10}" x2="${X(now)}" y2="${bottom}" stroke="var(--obs)" stroke-width="1.5"/>`;
+  }
+  s+='</svg>';el.innerHTML=s;
+  // table
+  const rows=[];for(let t=st.tS;t<=st.tE;t+=36e5){const p=skyAt(t);if(p)rows.push(p)}
+  tb.innerHTML=rows.length?`<thead><tr><th>Time</th><th>Sky</th><th class="num">°C</th><th class="num">Feels</th><th class="num">Rain</th><th class="num">Chance</th><th class="num">Cloud</th><th class="num">hPa</th><th class="num">Vis km</th></tr></thead><tbody>`+rows.map(p=>`<tr><td class="num" style="text-align:left">${fmtT(p.t)}</td><td>${WMO[p.code]||'–'}</td><td class="num">${p.temp!=null?p.temp.toFixed(0):'–'}</td><td class="num">${p.feel!=null?p.feel.toFixed(0):'–'}</td><td class="num">${p.rain!=null?p.rain.toFixed(1):'–'}</td><td class="num">${p.pop!=null?p.pop.toFixed(0)+'%':'–'}</td><td class="num">${p.cloud!=null?p.cloud.toFixed(0)+'%':'–'}</td><td class="num">${p.pres!=null?p.pres.toFixed(0):'–'}</td><td class="num">${p.vis!=null?(p.vis/1000).toFixed(0):'–'}</td></tr>`).join('')+'</tbody>':'';
+}
+function renderStreamNote(st){
+  const el=$('streamNote');const m=streamMethod(),rows=diamondRows();const src=tideSrc();
+  let msg={prism:'Prism model: stream = (upstream water area × rate of rise) ÷ channel cross-section. Defaults are rough chart estimates for the Orwell above Levington; tune the six numbers to match what you see on the water.',
+    diamond:`Tidal diamond: ${rows.length} rows read, rates blended by today's tide size.`,
+    factor:'Simple factor: stream = rate of rise × factor.'}[m];
+  if($('streamMethod').value==='diamond'&&rows.length<3)msg='Diamond table needs at least 3 valid rows (hour, set °T, springs kn, neaps kn); using the prism model until then.';
+  if(src&&st&&!st.none){let pk=0,pt=null;for(let t=st.tS-6*36e5;t<=st.tE+6*36e5;t+=9e5){const s=tideState(t);if(s&&s.stream!=null&&s.stream>pk){pk=s.stream;pt=t}}if(pt)msg+=` Peak around the race today: ~${pk.toFixed(1)} kn at ${fmtT(pt)}.`}
+  el.textContent=msg;
+}
+function renderTiles(st){
+  const el=$('tiles');
+  if(!st||st.none){el.innerHTML=`<div class="cell"><div class="k">Forecast</div><div class="v sm">—</div><div class="s">${wind?'No model covers that window yet. Try a nearer date.':'Waiting for data.'}</div></div>`;return}
+  const agreeTxt={good:'Models agree',warn:'Some disagreement',bad:'Models disagree'}[st.agree];
+  const ts=tideSize(st.tS);const tsS=tideState(st.tS),tsE=tideState(st.tE);const E=st.E;const smallTide=tsS&&tsS.range<0.5;
+  const isToday=localDate(dateEl.value).getTime()===today.getTime();const pk=stationKey();const L=relayURL()&&isToday&&pk?latest(pk):null;const cS=consensusAt(st.tS),cE=consensusAt(st.tE);
+  const shs=shifts(st).filter(x=>x.inWindow);const big=shs.reduce((m,x)=>Math.abs(x.deg)>Math.abs(m)?x.deg:m,0);
+  const now=Date.now();const toStart=st.tS-now;const cd=ms=>{const s=Math.max(0,Math.round(ms/1000));return pad(Math.floor(s/3600))+':'+pad(Math.floor(s%3600/60))+'<small>:'+pad(s%60)+'</small>'};
+  const stream=s=>s?`${s.stream!=null?s.stream.toFixed(1):'–'}<small>KN</small>`:'–';
+  el.innerHTML=`
+   <div class="cell"><div class="k">Wind · consensus</div><div class="v wind">${comp(st.dir)} ${st.spd.toFixed(0)}<small>KN</small></div><div class="s">${st.dir.toFixed(0)}° · F${bft(st.spd)} · gust ${st.gst!=null?st.gst.toFixed(0):'–'} · models ${st.spdMin.toFixed(0)}–${st.spdMax.toFixed(0)}${E?` · 80% of runs ${E.s10.toFixed(0)}–${E.s90.toFixed(0)}`:''}${cS&&cS.tmp!=null?` · ${cS.tmp.toFixed(0)}–${(cE&&cE.tmp!=null?cE.tmp:cS.tmp).toFixed(0)} °C`:''}</div></div>
+   <div class="cell two">
+     ${smallTide?`<div style="grid-column:1/-1"><div class="k">Tide</div><div class="v sm tidec">negligible</div><div class="s">range ${tsS.range.toFixed(2)} m here; stream and twelfths not shown</div></div>`:`<div><div class="k">Stream at start</div><div class="v md tidec">${stream(tsS)}</div><div class="s">${tsS?`${tsS.state.toLowerCase()} ${tsS.frac}/12${tsS.setDir!=null?' → '+tsS.setDir.toFixed(0)+'°':''}`:'–'}</div></div>
+     <div><div class="k">At finish</div><div class="v md tidec">${stream(tsE)}</div><div class="s">${tsE?`${tsE.state.toLowerCase()} ${tsE.frac}/12${tsE.setDir!=null?' → '+tsE.setDir.toFixed(0)+'°':''}`:'–'}</div></div>`}
+   </div>
+   <div class="cell two">
+     ${smallTide?`<div><div class="k">Tide range</div><div class="v sm tidec">${tsS.range.toFixed(2)}<small>m</small></div><div class="s">HW ${fmtT(tsS.next.kind==='HW'?tsS.next.t:tsS.prev.t)} · too small to matter</div></div>`:`<div><div class="k">Tide size</div><div class="v sm">${ts.pct.toFixed(0)}<small>%</small></div><div class="s">${ts.label.toLowerCase()}${tsS&&tsS.next?` · ${tsS.next.kind} ${fmtT(tsS.next.t)} · turns ${fmtT(tsS.turn)}`:''}</div></div>`}
+     <div><div class="k">Shift in race</div><div class="v sm wind">${big?(big>0?'+':'−')+Math.abs(big).toFixed(0)+'°':'—'}</div><div class="s">${big?`${big>0?'veer':'back'} ${fmtT(shs[0].t0)}–${fmtT(shs[0].t1)}`:'holds within 10°'}${E&&E.pGust>=0.25?` · gust ≥${gustThr()} in ${(E.pGust*100).toFixed(0)}% of runs`:''}</div></div>
+   </div>
+   <div class="cell two">
+     <div><div class="k">${toStart>0?'To start':toStart>-(st.tE-st.tS)?'Racing · to finish':'Race over'}</div><div class="v md">${toStart>0?cd(toStart):toStart>-(st.tE-st.tS)?cd(st.tE-now):'—'}</div><div class="s">${fmtT(st.tS)}–${fmtT(st.tE)} · ${localDate(dateEl.value).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</div></div>
+     <div><div class="k">${L?STATIONS[pk].name+' now':'Agreement'}</div><div class="v md">${L?comp(L.dir)+' '+L.spd.toFixed(0)+'<small>KN</small>':'<span class="pill '+st.agree+'" style="font-size:11px;vertical-align:middle">'+agreeTxt+'</span>'}</div><div class="s">${L?`g ${L.gst.toFixed(0)} · ${L.dir.toFixed(0)}°`+(()=>{const c=consensusAt(now);return c?` · fcst ${c.spd-L.spd>=0?'+':''}${(c.spd-L.spd).toFixed(0)} kn`:''})():`${st.per.length} models · ±${(st.dirSpread/2).toFixed(0)}° · ${st.spdMin.toFixed(0)}–${st.spdMax.toFixed(0)} kn`}</div></div>
+   </div>`;
+}
+function fillStationSelect(){const sel=$('station');const cur=store.station||'auto';sel.innerHTML='<option value="auto">Nearest station</option><option value="upwind">Most upwind for forecast</option>'+byDist().map(k=>`<option value="${k}">${STATIONS[k].name} · ${STATIONS[k].dist.toFixed(1)} nm</option>`).join('');sel.value=[...sel.options].some(o=>o.value===cur)?cur:'auto'}
+function renderLive(){
+  const el=$('live');const keys=byDist();
+  if(!relayURL()){el.innerHTML=`<p class="note">Live stations need the relay (Settings).</p>`;$('stTag').textContent='';return}
+  const pk=stationKey();
+  $('stTag').textContent=keys.length?`within ${radiusNm()} nm · plotting ${STATIONS[pk].name}`:`none within ${radiusNm()} nm`;
+  if(!keys.length){el.innerHTML=`<p class="note">No live wind station within ${radiusNm()} nm of ${V().name}. Widen the search radius (tap the venue name), or the nearest airport may be just outside it.</p>`;return}
+  const age=t=>{const m=Math.round((Date.now()-t)/6e4);return m<1?'just now':m<60?m+' min ago':Math.round(m/60)+' h ago'};
+  let s='<div class="live">';
+  keys.forEach(k=>{const L=latest(k);if(!L)return;const sel=k===pk;const S=STATIONS[k];
+    s+=`<div class="st" style="${sel?'border-color:var(--accent)':''}"><div class="n">${S.name}${sel?' <span class="pill good" style="font-size:10px;padding:1px 7px">plotted</span>':''}</div><div class="age">${fmtT(L.t)} · ${age(L.t)} · ${S.note}</div>
+      <div class="big">${comp(L.dir)} ${L.spd.toFixed(0)}<small> kn · ${L.dir.toFixed(0)}°</small></div>
+      <div class="row">gust ${L.gst.toFixed(0)} kn${S.kind==='hha'?' now · max '+L.gmax.toFixed(0)+' kn last hour':''}</div>
+      <div class="row">${L.p!=null?L.p.toFixed(S.kind==='metar'?0:1)+' hPa'+(L.dp!=null?' ('+(L.dp>=0?'+':'')+L.dp.toFixed(1)+' in 3 h)':''):''}${L.temp!=null?' · '+L.temp.toFixed(1)+' °C':''}</div></div>`});
+  const tg=(hhaTide||[]).filter(q=>q.tide_level!=null);if(tg.length){const r=tg[tg.length-1];const r1=tg[Math.max(0,tg.length-16)];const rising=r.tide_level>r1.tide_level;const ts=tideState(r.timestamp*1000);
+    s+=`<div class="st" style="border-color:var(--tide)"><div class="n">Harwich tide gauge</div><div class="age">${fmtT(r.timestamp*1000)} · ${age(r.timestamp*1000)}</div>
+      <div class="big">${r.tide_level.toFixed(2)}<small> m CD · ${rising?'rising':'falling'}</small></div>
+      <div class="row">${r.tide_predicted!=null?'predicted '+r.tide_predicted.toFixed(2)+' m':''}${r.tide_surge!=null?' · surge '+(r.tide_surge>=0?'+':'')+r.tide_surge.toFixed(2)+' m':''}</div>
+      <div class="row">${ts?`${ts.state.toLowerCase()} ${ts.frac}/12 · next ${ts.next.kind} ${fmtT(ts.next.t)} (${ts.next.h.toFixed(1)} m)`:''}</div></div>`}
+  else if(eaGauge){const rd=eaGauge.readings;const r=rd[rd.length-1];const r1=rd[Math.max(0,rd.length-4)];
+    s+=`<div class="st" style="border-color:var(--tide)"><div class="n">${eaGauge.name} tide gauge</div><div class="age">${fmtT(r.t)} · ${age(r.t)} · ${eaGauge.dist.toFixed(1)} nm · Environment Agency</div>
+      <div class="big">${r.h.toFixed(2)}<small> ${eaGauge.unit} · ${r.h>r1.h?'rising':'falling'}</small></div><div class="row">observed level on the gauge's own datum (${eaGauge.unit})</div></div>`}
+  s+='</div>';
+  const v=verify();if(v&&v.cons.s!=null){s+=`<p class="caption" style="margin-top:10px">Today since ${fmtT(v.since)} the consensus has run ${v.cons.s>=0?'+':''}${v.cons.s.toFixed(1)} kn against ${STATIONS[pk].name}${v.cons.d!=null?` and ${Math.abs(v.cons.d).toFixed(0)}° ${v.cons.d>=0?'right (veered)':'left (backed)'} of it`:''} · typical miss ${v.cons.mae.toFixed(1)} kn · ${v.n} readings.</p>`}
+  el.innerHTML=s;
+}
+
+// ---------- timeline ----------
+function dayBounds(){const d=localDate(dateEl.value).getTime();return {d0:d,d1:d+24*36e5}}
+function defaultView(){const st=windowStats();const {d0,d1}=dayBounds();if(st)return {a:Math.max(d0,st.tS-2*36e5),b:Math.min(d1,st.tE+2*36e5)};return {a:d0,b:d1}}
+function clampView(v){const {d0,d1}=dayBounds();const lo=d0-6*36e5,hi=d1+6*36e5;let span=Math.min(Math.max(v.b-v.a,36e5),hi-lo);let a=Math.max(lo,Math.min(v.a,hi-span));return {a,b:a+span}}
+function zoomBy(f,anchor){const v=view||defaultView();const t=anchor??(v.a+v.b)/2;view=clampView({a:t-(t-v.a)*f,b:t+(v.b-t)*f});renderTimeline(windowStats())}
+function renderTimeline(st){
+  const el=$('timeline');
+  if(!wind||!st){el.innerHTML='<p class="caption">Waiting for data.</p>';return}
+  if(!view)view=defaultView();
+  const W=Math.max(320,el.clientWidth||Math.min(1068,window.innerWidth-32)),ml=38,mr=16,mt=64,wh=Math.max(220,Math.min(320,W*0.4)),gap=26,dh=120,th=120,mb=28;const H=mt+wh+gap+dh+gap+th+mb;const pw=W-ml-mr;
+  const {a,b}=view;const X=t=>ml+pw*(t-a)/(b-a);
+  const pxh=pw/((b-a)/36e5);const stepMin=pxh>=150?15:pxh>=80?30:pxh>=42?60:pxh>=22?120:180;
+  const showEns=$('showEns').checked&&!!ens,showSpread=$('showSpread').checked;
+  const steps=[];for(let t=a-9e5;t<=b+9e5;t+=9e5){const c=consensusAt(t);if(!c)continue;c.e=showEns?ensAt(t):null;steps.push(c)}
+  const isToday=localDate(dateEl.value).getTime()===today.getTime();
+  const obs=isToday?(obsSeries()||[]).filter(p=>p.t>=a&&p.t<=b):[];const mo=(!relayURL()&&isToday)?manualObs():null;
+  let maxK=steps.length?Math.max(...steps.map(s=>Math.max(showSpread?s.max:s.spd,s.gst||0,s.e?s.e.s90:0))):20;
+  obs.forEach(p=>{maxK=Math.max(maxK,p.gst||p.spd||0)});if(mo)maxK=Math.max(maxK,mo.gst||mo.spd);maxK=Math.max(10,Math.ceil((maxK+3)/5)*5);
+  const Y=k=>mt+wh*(1-k/maxK);
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Consensus wind, gust, direction and tide across the race window">`;
+  s+=`<rect x="${X(st.tS)}" y="${mt-40}" width="${Math.max(0,X(st.tE)-X(st.tS))}" height="${H-mb-mt+40}" fill="var(--window)"/>`;
+  const kStep=maxK>40?10:5;
+  for(let k=0;k<=maxK;k+=kStep){s+=`<line x1="${ml}" y1="${Y(k)}" x2="${W-mr}" y2="${Y(k)}" stroke="var(--line-2)"/><text x="${ml-6}" y="${Y(k)+4}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${k}</text>`}
+  [[11,'F4'],[17,'F5'],[22,'F6'],[28,'F7']].forEach(([k,l])=>{if(k<maxK)s+=`<line x1="${ml}" y1="${Y(k)}" x2="${W-mr}" y2="${Y(k)}" stroke="var(--line)" stroke-dasharray="1 4"/><text x="${W-mr}" y="${Y(k)-3}" text-anchor="end" font-family="var(--mono)" font-size="9" fill="var(--ink-3)">${l}</text>`});
+  const dy0=mt+wh+gap,ty0=dy0+dh+gap;
+  const tick0=Math.ceil(a/(stepMin*6e4))*(stepMin*6e4);
+  for(let t=tick0;t<=b;t+=stepMin*6e4){const d=new Date(t);const major=d.getMinutes()===0;s+=`<line x1="${X(t)}" y1="${mt}" x2="${X(t)}" y2="${ty0+th}" stroke="${major?'var(--line)':'var(--line-2)'}"/>`;
+    s+=`<text x="${X(t)}" y="${H-mb+16}" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="var(--ink-2)">${fmtT(d)}</text>`}
+  s+=`<text x="${ml-6}" y="${mt-8}" text-anchor="end" font-size="10" fill="var(--ink-3)" font-family="var(--body)">kn</text>`;
+  const vis=steps;
+  const path=(fn,pts)=>pts.map((p,i)=>(i?'L':'M')+X(p.t).toFixed(1)+','+Y(fn(p)).toFixed(1)).join('');
+  if(vis.length){
+    if(showEns){const ep=vis.filter(p=>p.e);if(ep.length>1){s+=`<path d="${path(p=>p.e.s90,ep)}${ep.slice().reverse().map(p=>'L'+X(p.t).toFixed(1)+','+Y(p.e.s10).toFixed(1)).join('')}Z" fill="rgba(var(--accent-rgb),.10)"/>`;s+=`<path d="${path(p=>p.e.s75,ep)}${ep.slice().reverse().map(p=>'L'+X(p.t).toFixed(1)+','+Y(p.e.s25).toFixed(1)).join('')}Z" fill="rgba(var(--accent-rgb),.16)"/>`}}
+    if(showSpread){wind.models.forEach((m,i)=>{const pts=vis.filter(p=>p.vals[i]!=null);if(pts.length)s+=`<path d="${pts.map((p,j)=>(j?'L':'M')+X(p.t).toFixed(1)+','+Y(p.vals[i]).toFixed(1)).join('')}" fill="none" stroke="var(${m.c})" stroke-width="1.3" stroke-opacity=".8"/>`})}
+    const gp=vis.filter(p=>p.gst!=null);if(gp.length)s+=`<path d="${path(p=>p.gst,gp)}" fill="none" stroke="var(--gust)" stroke-width="2" stroke-dasharray="5 4" stroke-opacity=".9"/>`;
+    s+=`<path d="${path(p=>p.spd,vis)}" fill="none" stroke="var(--accent)" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const fs=Math.max(15,Math.min(22,pxh/4));
+    for(let t=tick0;t<=b;t+=stepMin*6e4){const c=consensusAt(t);if(!c)continue;const px=X(t);if(px<ml+22)continue;
+      s+=`<text class="tl-lbl" x="${px}" y="${Y(c.spd)-9}" text-anchor="middle" font-size="${fs}" fill="var(--ink)">${c.spd.toFixed(0)}</text>`;
+      if(c.gst!=null)s+=`<text class="tl-lbl" x="${px}" y="${Y(c.gst)-6}" text-anchor="middle" font-size="${Math.round(fs*0.68)}" fill="var(--gust)">${c.gst.toFixed(0)}</text>`;
+      if(c.dir!=null){s+=`<g transform="translate(${px},${mt-20}) rotate(${c.dir+180})"><line x1="0" y1="8" x2="0" y2="-8" stroke="var(--ink-2)" stroke-width="2"/><path d="M0,-10L-4.5,-3L4.5,-3Z" fill="var(--ink-2)"/></g><text x="${px}" y="${mt-34}" text-anchor="middle" font-family="var(--display)" font-weight="600" font-size="13" fill="var(--ink)">${comp(c.dir)}</text>`}}
+  }else s+=`<text x="${ml+pw/2}" y="${mt+wh/2}" text-anchor="middle" fill="var(--ink-3)" font-size="13">No model data in this range</text>`;
+  // observed wind
+  if(obs.length>1){const op=obs.filter(p=>p.spd!=null);s+=`<path d="${path(p=>Math.min(p.spd,maxK),op)}" fill="none" stroke="var(--obs)" stroke-width="2.5" stroke-linejoin="round"/>`;const og=obs.filter(p=>p.gst!=null);if(og.length)s+=`<path d="${path(p=>Math.min(p.gst,maxK),og)}" fill="none" stroke="var(--obs)" stroke-width="1.2" stroke-dasharray="2 3"/>`;
+    const last=op[op.length-1];if(last)s+=`<circle cx="${X(last.t)}" cy="${Y(last.spd)}" r="5" fill="var(--panel)" stroke="var(--obs)" stroke-width="2.5"/><text class="tl-lbl" x="${X(last.t)-8}" y="${Y(last.spd)+5}" text-anchor="end" font-size="14" fill="var(--obs)">${last.spd.toFixed(0)}</text>`}
+  if(mo&&mo.t>=a&&mo.t<=b){s+=`<circle cx="${X(mo.t)}" cy="${Y(Math.min(mo.spd,maxK))}" r="7" fill="var(--panel)" stroke="var(--obs)" stroke-width="2.5"/>`;if(mo.gst!=null)s+=`<circle cx="${X(mo.t)}" cy="${Y(Math.min(mo.gst,maxK))}" r="4" fill="none" stroke="var(--obs)" stroke-width="1.5" stroke-dasharray="2 2"/>`}
+  // ---- direction panel ----
+  const cen=st.dir;let span=30;vis.forEach(p=>{if(p.dir!=null)span=Math.max(span,Math.abs(offset(p.dir,cen))+10);if(showSpread)p.ds.forEach(d=>{if(d!=null)span=Math.max(span,Math.abs(offset(d,cen))+5)});if(p.e&&p.e.dirs.length){const o=p.e.dirs.map(d=>offset(d,cen));span=Math.max(span,Math.abs(pct(o,.1))+5,Math.abs(pct(o,.9))+5)}});
+  obs.forEach(p=>{if(p.dir!=null&&p.spd>3)span=Math.max(span,Math.abs(offset(p.dir,cen))+5)});span=Math.min(180,Math.ceil(span/15)*15);
+  const DY=off=>dy0+dh*(0.5-off/(2*span));
+  const dStep=span>90?45:span>45?30:15;
+  for(let o=-span;o<=span;o+=dStep){const y=DY(o);s+=`<line x1="${ml}" y1="${y}" x2="${W-mr}" y2="${y}" stroke="${o===0?'var(--line)':'var(--line-2)'}"/><text x="${ml-6}" y="${y+4}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${comp(cen+o)}</text>`}
+  s+=`<text x="${W-mr}" y="${dy0-6}" text-anchor="end" font-size="10" fill="var(--ink-3)" font-family="var(--body)">direction · up = veer</text>`;
+  if(vis.length){
+    const dpath=(fn,pts)=>{let d='',pen=false;pts.forEach(p=>{const v=fn(p);if(v==null){pen=false;return}const off=offset(v,cen);d+=(pen?'L':'M')+X(p.t).toFixed(1)+','+DY(Math.max(-span,Math.min(span,off))).toFixed(1);pen=true});return d};
+    if(showEns){const ep=vis.filter(p=>p.e&&p.e.dirs.length>5);if(ep.length>1){const q=(p,k)=>{const o=p.e.dirs.map(d=>offset(d,cen));return pct(o,k)};
+      s+=`<path d="${ep.map((p,i)=>(i?'L':'M')+X(p.t).toFixed(1)+','+DY(Math.max(-span,Math.min(span,q(p,.9)))).toFixed(1)).join('')}${ep.slice().reverse().map(p=>'L'+X(p.t).toFixed(1)+','+DY(Math.max(-span,Math.min(span,q(p,.1)))).toFixed(1)).join('')}Z" fill="rgba(var(--accent-rgb),.10)"/>`;
+      s+=`<path d="${ep.map((p,i)=>(i?'L':'M')+X(p.t).toFixed(1)+','+DY(Math.max(-span,Math.min(span,q(p,.75)))).toFixed(1)).join('')}${ep.slice().reverse().map(p=>'L'+X(p.t).toFixed(1)+','+DY(Math.max(-span,Math.min(span,q(p,.25)))).toFixed(1)).join('')}Z" fill="rgba(var(--accent-rgb),.16)"/>`}}
+    if(showSpread)wind.models.forEach((m,i)=>{s+=`<path d="${dpath(p=>p.ds[i],vis)}" fill="none" stroke="var(${m.c})" stroke-width="1.3" stroke-opacity=".8"/>`});
+    s+=`<path d="${dpath(p=>p.dir,vis)}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round"/>`;
+    for(let t=tick0;t<=b;t+=stepMin*6e4){const c=consensusAt(t);if(!c||c.dir==null||X(t)<ml+22)continue;s+=`<text class="tl-lbl" x="${X(t)}" y="${DY(offset(c.dir,cen))-8}" text-anchor="middle" font-size="12" fill="var(--ink)">${c.dir.toFixed(0)}°</text>`}
+    if(obs.length>1){const od=obs.filter(p=>p.dir!=null&&p.spd>3);if(od.length>1)s+=`<path d="${dpath(p=>p.dir,od)}" fill="none" stroke="var(--obs)" stroke-width="2.2"/>`}
+    if(mo&&mo.dir!=null&&mo.t>=a&&mo.t<=b)s+=`<circle cx="${X(mo.t)}" cy="${DY(Math.max(-span,Math.min(span,offset(mo.dir,cen))))}" r="6" fill="var(--panel)" stroke="var(--obs)" stroke-width="2.5"/>`;
+    shifts(st).filter(sh=>sh.t1>=a&&sh.t0<=b).forEach(sh=>{const x0=X(Math.max(sh.t0,a)),x1=X(Math.min(sh.t1,b));s+=`<rect x="${x0}" y="${dy0+dh-14}" width="${Math.max(2,x1-x0)}" height="14" fill="rgba(var(--accent-rgb),.22)"/><text x="${(x0+x1)/2}" y="${dy0+dh-3}" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--ink)">${sh.deg>0?'veer':'back'} ${Math.abs(sh.deg).toFixed(0)}°</text>`});
+  }
+  // ---- tide strip ----
+  const src=tideSrc();
+  if(src){
+    const tp=[];for(let t=a;t<=b;t+=9e5){const h=tideH(src,t);if(h!=null)tp.push({t,h})}
+    if(tp.length){
+      const hsv=tp.map(p=>p.h);const lo=Math.min(...hsv)-0.25,hi=Math.max(...hsv)+0.5;const TY=h=>ty0+th*(1-(h-lo)/(hi-lo));
+      const ex=src.ext,off=slackMs();for(let i=0;i<ex.length-1;i++){const P=ex[i],N=ex[i+1];if(N.t+off<a||P.t+off>b)continue;const I=(N.t-P.t)/6;const flood=N.kind==='HW';
+        for(let k=0;k<6;k++){const s0=P.t+off+k*I,s1=s0+I;if(s1<a||s0>b)continue;const x0=X(Math.max(s0,a)),x1=X(Math.min(s1,b));
+          s+=`<rect x="${x0}" y="${ty0}" width="${x1-x0}" height="${th}" fill="rgba(var(--tide-rgb),${(0.08+TW[k]*0.1).toFixed(2)})"/>`;
+          if(x1-x0>34)s+=`<text class="tl-mono" x="${(x0+x1)/2}" y="${ty0+13}" text-anchor="middle" font-size="11" fill="var(--ink)">${TW[k]}/12</text>`;
+          if(x1-x0>52){const sv=tideState((s0+s1)/2);s+=`<text class="tl-mono" x="${(x0+x1)/2}" y="${ty0+25}" text-anchor="middle" font-size="9.5" fill="var(--ink-2)">${flood?'flood':'ebb'}${sv&&sv.stream!=null?' ~'+sv.stream.toFixed(1)+' kn':''}</text>`}}
+        if(i>0){const tx=X(P.t+off);if(tx>=X(a)&&tx<=X(b))s+=`<line x1="${tx}" y1="${ty0}" x2="${tx}" y2="${ty0+th}" stroke="var(--tide)" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${tx+3}" y="${ty0+th-26}" font-family="var(--mono)" font-size="9.5" fill="var(--tide)">turns ${fmtT(P.t+off)}</text>`}}
+      const line=tp.map((p,i)=>(i?'L':'M')+X(p.t).toFixed(1)+','+TY(p.h).toFixed(1)).join('');
+      s+=`<path d="${line}L${X(tp[tp.length-1].t)},${ty0+th}L${X(tp[0].t)},${ty0+th}Z" fill="var(--tide-fill)"/><path d="${line}" fill="none" stroke="var(--tide)" stroke-width="2.5"/>`;
+      if(hhaTide&&isToday){const ob=hhaTide.filter((r,i)=>i%10===0&&r.timestamp*1000>=a&&r.timestamp*1000<=b);if(ob.length>1)s+=`<path d="${ob.map((r,i)=>(i?'L':'M')+X(r.timestamp*1000).toFixed(1)+','+TY(Math.max(lo,Math.min(hi,r.tide_level))).toFixed(1)).join('')}" fill="none" stroke="var(--obs)" stroke-width="1.8"/>`}
+      ex.filter(e=>e.t>=a&&e.t<=b).forEach(e=>{s+=`<circle cx="${X(e.t)}" cy="${TY(e.h)}" r="4" fill="var(--panel)" stroke="var(--tide)" stroke-width="2"/><text class="tl-lbl" x="${X(e.t)}" y="${TY(e.h)+(e.kind==='HW'?-8:19)}" text-anchor="middle" font-size="13" fill="var(--ink)">${e.kind} ${fmtT(e.t)} · ${e.h.toFixed(1)} m</text>`});
+      s+=`<text x="${ml-6}" y="${ty0+10}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${hi.toFixed(1)}</text><text x="${ml-6}" y="${ty0+th}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${lo.toFixed(1)}</text><text x="${ml-6}" y="${ty0+th/2+4}" text-anchor="end" font-size="9" fill="var(--ink-3)" font-family="var(--body)">m ${src.datum}</text>`;
+    }
+  }else s+=`<text x="${ml+pw/2}" y="${ty0+th/2}" text-anchor="middle" fill="var(--ink-3)" font-size="12">Tide unavailable</text>`;
+  const tight=(X(st.tE)-X(st.tS))<150;
+  [[st.tS,'Start'],[st.tE,'Finish']].forEach(([t,l])=>{if(t<a||t>b)return;const tsx=tideState(t);const px=X(t);const left=l==='Start';const up=tight&&!left?14:0;
+    s+=`<line x1="${px}" y1="${mt-44}" x2="${px}" y2="${ty0+th}" stroke="var(--ink-2)" stroke-width="1.2" stroke-dasharray="3 3"/>`;
+    s+=`<text class="tl-lbl" x="${px+(left?5:-5)}" y="${mt-48-up}" text-anchor="${left?'start':'end'}" font-size="14" fill="var(--ink)">${l} ${fmtT(t)}</text>`;
+    if(tsx)s+=`<text class="tl-lbl" x="${px+(left?5:-5)}" y="${ty0+th-8-up}" text-anchor="${left?'start':'end'}" font-size="12" fill="var(--tide)">${tsx.state} ${tsx.frac}/12${tsx.stream!=null?' ~'+tsx.stream.toFixed(1)+' kn':''}</text>`});
+  const now=Date.now();if(now>=a&&now<=b){s+=`<line x1="${X(now)}" y1="${mt-44}" x2="${X(now)}" y2="${ty0+th}" stroke="var(--obs)" stroke-width="1.5"/><text x="${X(now)+4}" y="${mt+12}" font-family="var(--mono)" font-size="10" fill="var(--obs)">now</text>`}
+  s+=`<g id="tlCross" style="display:none"><line id="tlLine" y1="${mt-44}" y2="${ty0+th}" stroke="var(--ink-3)" stroke-width="1"/></g>`;
+  s+='</svg><div class="tip" id="tlTip" style="display:none"></div>';
+  el.innerHTML=s;
+  bindTimeline(el,{a,b,W,ml,pw,steps,obs});
+}
+function bindTimeline(el,ctx){
+  const svg=el.querySelector('svg'),tip=$('tlTip'),cross=$('tlCross'),line=$('tlLine');
+  const ptrs=new Map();let pinch=null,drag=null,moved=false;
+  const tAt=cx=>{const r=svg.getBoundingClientRect();return ctx.a+((cx-r.left)-ctx.ml)/ctx.pw*(ctx.b-ctx.a)};
+  const showAt=(cx,cy)=>{if(!ctx.steps.length)return;const t=tAt(cx);let best=ctx.steps[0];ctx.steps.forEach(p=>{if(Math.abs(p.t-t)<Math.abs(best.t-t))best=p});
+    const r=svg.getBoundingClientRect();const px=ctx.ml+ctx.pw*(best.t-ctx.a)/(ctx.b-ctx.a);line.setAttribute('x1',px);line.setAttribute('x2',px);cross.style.display='';
+    const ts=tideState(best.t);let ob=null;ctx.obs.forEach(p=>{if(Math.abs(p.t-best.t)<=6e5&&(!ob||Math.abs(p.t-best.t)<Math.abs(ob.t-best.t)))ob=p});
+    tip.innerHTML=`<div class="t">${fmtT(best.t)} · ${best.dir!=null?comp(best.dir)+' '+best.dir.toFixed(0)+'°':''}</div>wind ${best.spd.toFixed(1)} kn (models ${best.min.toFixed(0)}–${best.max.toFixed(0)})${best.gst!=null?' · gust '+best.gst.toFixed(0):''}${best.tmp!=null?' · '+best.tmp.toFixed(1)+' °C':''}${best.e?`<br>ensemble ${best.e.s10.toFixed(0)}–${best.e.s90.toFixed(0)} kn, gust p90 ${best.e.g90.toFixed(0)}`:''}${ob&&ob.spd!=null?`<br>observed ${ob.spd.toFixed(1)} kn${ob.gst!=null?' g'+ob.gst.toFixed(0):''}${ob.dir!=null?' '+ob.dir.toFixed(0)+'°':''}`:''}${ts?`<br>${ts.state.toLowerCase()} ${ts.frac}/12 · ${ts.h.toFixed(2)} m ${ts.datum}${ts.rate!=null?' · '+(ts.rate>=0?'+':'')+ts.rate.toFixed(2)+' m/h':''}${ts.stream!=null?' · stream ~'+ts.stream.toFixed(1)+' kn'+(ts.setDir!=null?' → '+ts.setDir.toFixed(0)+'°':''):''}`:''}`;
+    tip.style.display='';tip.style.left=Math.max(0,Math.min(cx-r.left+12,r.width-tip.offsetWidth-4))+'px';tip.style.top=Math.max(0,cy-r.top-12)+'px'};
+  const hide=()=>{tip.style.display='none';cross.style.display='none'};
+  svg.addEventListener('pointerdown',e=>{ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});svg.setPointerCapture(e.pointerId);moved=false;
+    if(ptrs.size===2){const [p,q]=[...ptrs.values()];pinch={d:Math.hypot(p.x-q.x,p.y-q.y),v:{...view},mid:(p.x+q.x)/2};drag=null;hide()}
+    else if(ptrs.size===1)drag={x:e.clientX,v:{...view}}});
+  svg.addEventListener('pointermove',e=>{
+    if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pinch&&ptrs.size===2){const [p,q]=[...ptrs.values()];const d=Math.hypot(p.x-q.x,p.y-q.y);if(d<10)return;const f=pinch.d/d;const anchor=tAt(pinch.mid);
+      view=clampView({a:anchor-(anchor-pinch.v.a)*f,b:anchor+(pinch.v.b-anchor)*f});moved=true;renderTimeline(windowStats());return}
+    if(drag&&ptrs.size===1){const dx=e.clientX-drag.x;if(Math.abs(dx)>4)moved=true;if(moved){const r=svg.getBoundingClientRect();const dt=-dx/(ctx.pw*(r.width/ctx.W))*(drag.v.b-drag.v.a);view=clampView({a:drag.v.a+dt,b:drag.v.b+dt});renderTimeline(windowStats());return}}
+    if(!drag&&!pinch&&e.pointerType==='mouse')showAt(e.clientX,e.clientY)});
+  const up=e=>{if(!moved&&ptrs.has(e.pointerId)&&ptrs.size===1&&e.pointerType!=='mouse')showAt(e.clientX,e.clientY);ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;if(ptrs.size===0)drag=null};
+  svg.addEventListener('pointerup',up);svg.addEventListener('pointercancel',up);
+  svg.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&!drag)hide()});
+  svg.addEventListener('wheel',e=>{e.preventDefault();zoomBy(e.deltaY>0?1.2:1/1.2,tAt(e.clientX))},{passive:false});
+}
+function shiftRow(x){return `<div class="shift"><div class="d">${x.deg>0?'Veers':'Backs'} ${Math.abs(x.deg).toFixed(0)}°</div><div><b>${comp(x.from)} ${x.from.toFixed(0)}° → ${comp(x.to)} ${x.to.toFixed(0)}°</b>, ${fmtT(x.t0)}–${fmtT(x.t1)}<div class="w">${x.nModels?`${x.nModels} of ${wind.models.length} models have it; they put the halfway point between ${fmtT(x.tMin)} and ${fmtT(x.tMax)}${(x.tMax-x.tMin)>2*36e5?' <span class="pill warn" style="font-size:11px">timing uncertain</span>':(x.tMax-x.tMin)<=36e5?' <span class="pill good" style="font-size:11px">timing agreed</span>':''}`:'only the average shows it'}</div></div></div>`}
+function renderShifts(st){
+  const el=$('shifts'),sum=$('shiftsSum');if(!st||st.none){el.innerHTML='';sum.textContent='Wind shifts';return}
+  const sh=shifts(st);const inW=sh.filter(x=>x.inWindow),outW=sh.filter(x=>!x.inWindow);
+  const big=inW.reduce((m,x)=>Math.max(m,Math.abs(x.deg)),0);
+  sum.innerHTML='Wind shifts'+(inW.length?`<span class="pill ${big>=30?'warn':'good'}">${inW.length} in the race · up to ${big.toFixed(0)}°</span>`:'<span class="pill good">none in the race</span>');
+  el.innerHTML=(inW.length?inW.map(shiftRow).join(''):'<p class="note">Consensus direction holds within 10° through the race window.</p>')+
+   (outW.length?`<details style="margin-top:8px"><summary style="font-size:13px;letter-spacing:.04em">Rest of the day (${outW.length})</summary><div style="margin-top:8px;opacity:.75">${outW.map(shiftRow).join('')}</div></details>`:'')+
+   '<p class="caption">Veer = clockwise (e.g. SW to W), back = anticlockwise. From the consensus of the six models at 30-minute steps; the direction panel on the chart marks the same shifts.</p>';
+}
+function renderBrief(st){
+  const el=$('brief');
+  if(!st||st.none){el.innerHTML=`<h2>Race area conditions</h2><p>${wind?'No forecast covers that window yet.':'Waiting for the forecast…'}</p>`;return}
+  const cS=consensusAt(st.tS),cE=consensusAt(st.tE);if(!cS||!cE){el.innerHTML='<h2>Race area conditions</h2><p>Forecast incomplete for this window.</p>';return}
+  const strength=k=>k<4?'very light':k<7?'light':k<11?'gentle':k<17?'moderate':k<22?'fresh':k<28?'strong':'very strong';
+  const dS=cS.dir,dE=cE.dir;const dd=dS!=null&&dE!=null?offset(dE,dS):0;
+  let wind1=`<b>${strength(st.spd).replace(/^./,c=>c.toUpperCase())} ${comp(dS)}</b> at the start, ${cS.spd.toFixed(0)} kn`;
+  if(Math.abs(dd)>=10)wind1+=`, ${dd>0?'veering':'backing'} to ${comp(dE)} by the finish`;else wind1+=`, holding ${comp(dE)} through the race`;
+  const ds=cE.spd-cS.spd;const lo=Math.min(cS.spd,cE.spd).toFixed(0),hi=Math.max(cS.spd,cE.spd).toFixed(0);wind1+=ds>=3?`; building to ${cE.spd.toFixed(0)} kn.`:ds<=-3?`; easing to ${cE.spd.toFixed(0)} kn.`:ds>=1.5?`; freshening slightly to ${cE.spd.toFixed(0)} kn.`:ds<=-1.5?`; easing slightly to ${cE.spd.toFixed(0)} kn.`:`; steady at ${lo===hi?lo:lo+'–'+hi} kn.`;
+  let gust='';if(st.gst!=null){const peakG=Math.max(...st.per.map(p=>p.gstMax||0));gust=` Gusts around ${st.gst.toFixed(0)} kn${peakG>=gustThr()?`, with the strongest model giving ${peakG.toFixed(0)}`:''}.`;if(st.E&&st.E.pGust>=0.25)gust+=` ${(st.E.pGust*100).toFixed(0)}% of ensemble runs gust over ${gustThr()} kn.`}
+  const shs=shifts(st).map(x=>{const o0=Math.max(x.t0,st.tS-18e5),o1=Math.min(x.t1,st.tE+18e5);const f=o1>o0?(o1-o0)/(x.t1-x.t0):0;return {...x,inDeg:x.deg*f,o0,o1}}).filter(x=>Math.abs(x.inDeg)>=10);
+  let shiftTxt=shs.length?' '+shs.map(x=>`A ${Math.abs(x.inDeg).toFixed(0)}° ${x.deg>0?'veer':'back'} is forecast ${x.o1-x.o0>=2*36e5?'between '+fmtT(x.o0)+' and '+fmtT(x.o1):'around '+fmtT((x.o0+x.o1)/2)}${x.nModels&&(x.tMax-x.tMin)<=36e5?' (models agree on timing)':x.nModels&&(x.tMax-x.tMin)>2*36e5?' (timing uncertain)':''}.`).join(' '):' No major shift expected during the race.';
+  // tide
+  const tsS=tideState(st.tS),tsE=tideState(st.tE);let tide='';
+  if(tsS&&tsS.range<0.5){tide=`<b>Tide negligible here</b>: range ${tsS.range.toFixed(2)} m, so no stream to plan around.`}
+  else if(tsS&&tsE){const since=(st.tS-tsS.prev.t)/36e5,until=(tsS.next.t-st.tS)/36e5;const hrsTxt=x=>x<0.75?'just':x<1.5?'about an hour':`${x.toFixed(0)} hours`;
+    const when=since<=until?`${hrsTxt(since)} after ${tsS.prev.kind==='HW'?'high':'low'} water`:`${hrsTxt(until)} before ${tsS.next.kind==='HW'?'high':'low'} water`;
+    const sizeT=tideSize(st.tS);tide=`<b>Start ${when}</b>, ${tsS.hour<=2?'early in':tsS.hour>=5?'at the end of':'in the middle of'} the ${tsS.state.toLowerCase()} (${tsS.frac}/12${tsS.stream!=null?', ~'+tsS.stream.toFixed(1)+' kn':''})`;
+    const turnIn=tsS.turn>st.tS&&tsS.turn<st.tE;
+    if(turnIn)tide+=`; the stream turns to ${tsS.state==='Flood'?'ebb':'flood'} at about ${fmtT(tsS.turn)}, mid-race, and runs ${tsE.frac}/12${tsE.stream!=null?' (~'+tsE.stream.toFixed(1)+' kn)':''} by the finish.`;
+    else{const gaining=tsE.frac>tsS.frac||(tsE.frac===tsS.frac&&tsE.hour<=3);tide+=`. The whole race is on ${tsE.frac>tsS.frac?'a strengthening':tsE.frac<tsS.frac?'a weakening':'a steady'} ${tsS.state.toLowerCase()}, ${tsE.frac}/12${tsE.stream!=null?' (~'+tsE.stream.toFixed(1)+' kn)':''} at the finish; it turns at about ${fmtT(tsS.turn)}.`}
+    let pk=0,pt=null;for(let t=st.tS;t<=st.tE;t+=9e5){const s=tideState(t);if(s&&s.stream!=null&&s.stream>pk){pk=s.stream;pt=t}}if(pt&&pk>0)tide+=` Peak stream in the race ~${pk.toFixed(1)} kn at ${fmtT(pt)}.`;
+    tide+=` ${sizeT.label} tide (${sizeT.pct.toFixed(0)}%)${sizeT.pct>=70?', so the tide will matter':sizeT.pct<=30?', so tide effects are small':''}.`}
+  // confidence
+  const conf={good:'Good',warn:'Fair',bad:'Poor'}[st.agree];
+  let agree=`<b>Confidence ${conf.toLowerCase()}</b>: ${st.per.length} models within ±${(st.dirSpread/2).toFixed(0)}° and ${st.spdMin.toFixed(0)}–${st.spdMax.toFixed(0)} kn`;
+  if(st.E)agree+=`; 80% of ${st.E.n} ensemble runs give ${st.E.s10.toFixed(0)}–${st.E.s90.toFixed(0)} kn`;agree+='.';
+  const isToday=localDate(dateEl.value).getTime()===today.getTime();const pkb=stationKey();const L=relayURL()&&isToday&&pkb?latest(pkb):null;const v=isToday?verify():null;
+  if(L){const cn=consensusAt(Date.now());if(cn){const es=cn.spd-L.spd,ed=offset(cn.dir,L.dir);agree+=` ${STATIONS[pkb].name} now reads ${comp(L.dir)} ${L.spd.toFixed(0)} kn, ${Math.abs(es)<2.5&&Math.abs(ed)<20?'in line with the forecast':`forecast is ${Math.abs(es).toFixed(0)} kn ${es>0?'high':'low'}${Math.abs(ed)>=15?' and '+Math.abs(ed).toFixed(0)+'° '+(ed>0?'right':'left'):''}`}.`}}
+  else if(v&&v.cons.s!=null&&pkb)agree+=` Today the consensus has run ${Math.abs(v.cons.s).toFixed(1)} kn ${v.cons.s>=0?'high':'low'} against ${STATIONS[pkb].name}.`;
+  const day=localDate(dateEl.value).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+  el.innerHTML=`<h2>Race area conditions<span class="tag">Win race</span></h2><p>${wind1}${gust}${shiftTxt}</p><p>${tide}</p><p>${agree}</p><div class="meta">${day} · ${fmtT(st.tS)}–${fmtT(st.tE)} · ${V().name} · issued ${fmtT(new Date())}</div>`;
+}
+function renderCompass(st){
+  const S=300,c=S/2,R=118;const el=$('compass');
+  if(!st||st.none){el.innerHTML='';$('compassCap').textContent='';return}
+  const r=Math.PI/180,P=(a,rr)=>[c+rr*Math.sin(a*r),c-rr*Math.cos(a*r)];
+  const arc=(a0,a1,rr)=>{const [x0,y0]=P(a0,rr),[x1,y1]=P(a1,rr);return `M${x0},${y0}A${rr},${rr},0,${(a1-a0)>180?1:0},1,${x1},${y1}`};
+  let s=`<svg viewBox="0 0 ${S} ${S}" width="${S}" height="${S}" style="margin:0 auto" role="img" aria-label="Compass showing consensus wind direction ${comp(st.dir)} with model spread">`;
+  s+=`<circle cx="${c}" cy="${c}" r="${R}" fill="none" stroke="var(--line)" stroke-width="1.5"/>`;
+  for(let a=0;a<360;a+=10){const maj=a%90===0,mid=a%30===0;const [x0,y0]=P(a,R),[x1,y1]=P(a,R-(maj?14:mid?9:5));s+=`<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="var(--ink-3)" stroke-width="${maj?2:1}"/>`}
+  ['N','E','S','W'].forEach((l,i)=>{const [x,y]=P(i*90,R+18);s+=`<text x="${x}" y="${y+5}" text-anchor="middle" font-family="var(--display)" font-weight="700" font-size="16" fill="var(--ink)">${l}</text>`});
+  const a0=st.dir+st.offMin,a1=st.dir+st.offMax;
+  if(st.offMax-st.offMin>0.5){const [ax,ay]=P(a0,R-2),[bx,by]=P(a1,R-2);s+=`<path d="M${c},${c}L${ax},${ay}A${R-2},${R-2},0,${(a1-a0)>180?1:0},1,${bx},${by}Z" fill="var(--accent-soft)"/>`;s+=`<path d="${arc(a0,a1,R-2)}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>`}
+  st.per.forEach(p=>{const [x,y]=P(p.dir,R-24);s+=`<circle cx="${x}" cy="${y}" r="5" fill="var(${p.m.c})" stroke="var(--panel)" stroke-width="2"><title>${p.m.name}: ${p.dir.toFixed(0)}°</title></circle>`});
+  const pkc=stationKey();const L=relayURL()&&pkc?latest(pkc):null;if(L){const [x,y]=P(L.dir,R-24);s+=`<circle cx="${x}" cy="${y}" r="7" fill="none" stroke="var(--obs)" stroke-width="2"><title>Observed now ${L.dir.toFixed(0)}°</title></circle>`}
+  const [tx,ty]=P(st.dir,R-6),[hx,hy]=P(st.dir,34);
+  s+=`<g class="compassArrow"><line x1="${tx}" y1="${ty}" x2="${hx}" y2="${hy}" stroke="var(--accent)" stroke-width="5" stroke-linecap="round"/>`;
+  const l1x=c+(R-70)*Math.sin(st.dir*r)+12*Math.sin((st.dir+90)*r),l1y=c-(R-70)*Math.cos(st.dir*r)-12*Math.cos((st.dir+90)*r),l2x=c+(R-70)*Math.sin(st.dir*r)-12*Math.sin((st.dir+90)*r),l2y=c-(R-70)*Math.cos(st.dir*r)+12*Math.cos((st.dir+90)*r);
+  s+=`<path d="M${hx},${hy}L${l1x},${l1y}L${l2x},${l2y}Z" fill="var(--accent)"/></g>`;
+  s+=`<text x="${c}" y="${c+8}" text-anchor="middle" font-family="var(--display)" font-weight="700" font-size="30" fill="var(--ink)">${comp(st.dir)}</text>`;
+  s+=`<text x="${c}" y="${c+26}" text-anchor="middle" font-family="var(--mono)" font-size="12" fill="var(--ink-2)">${st.dir.toFixed(0)}°</text>`;
+  s+='</svg>';el.innerHTML=s;
+  const lo=st.per.reduce((p,q)=>offset(p.dir,st.dir)<offset(q.dir,st.dir)?p:q),hi=st.per.reduce((p,q)=>offset(p.dir,st.dir)>offset(q.dir,st.dir)?p:q);
+  $('compassCap').textContent=`Arrow = consensus (${st.dir.toFixed(0)}°). Wedge = model spread, ${lo.m.name} furthest left (${lo.dir.toFixed(0)}°), ${hi.m.name} furthest right (${hi.dir.toFixed(0)}°). Dots = each model's average for the window; ring = observed now.`;
+}
+function renderSpeed(st){
+  const el=$('speedbar');if(!st||st.none){el.innerHTML='';return}
+  const W=440,H=190,L=14,Rr=14;const maxK=Math.max(30,Math.ceil((st.gstMax||st.spdMax)/5)*5+5);
+  const X=k=>L+(W-L-Rr)*Math.min(k,maxK)/maxK;const pks=stationKey();const O=relayURL()&&pks?latest(pks):null;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Wind strength bar: consensus ${st.spd.toFixed(0)} knots, models ${st.spdMin.toFixed(0)} to ${st.spdMax.toFixed(0)}">`;
+  const gy=40;
+  s+=`<text x="${L}" y="${gy-10}" font-size="11" fill="var(--ink-3)" font-family="var(--body)" letter-spacing=".06em">GUSTS</text>`;
+  s+=`<line x1="${X(0)}" y1="${gy}" x2="${X(maxK)}" y2="${gy}" stroke="var(--line)" stroke-width="2"/>`;
+  if(st.gst!=null){s+=`<line x1="${X(st.gstMin)}" y1="${gy}" x2="${X(st.gstMax)}" y2="${gy}" stroke="var(--accent-soft)" stroke-width="8" stroke-linecap="round"/><line x1="${X(st.gstMin)}" y1="${gy}" x2="${X(st.gstMax)}" y2="${gy}" stroke="var(--accent)" stroke-width="2" stroke-opacity=".6" stroke-linecap="round"/>`;
+    st.per.filter(p=>p.gst!=null).forEach(p=>{s+=`<circle cx="${X(p.gst)}" cy="${gy}" r="3.5" fill="var(${p.m.c})" stroke="var(--panel)" stroke-width="1.5"><title>${p.m.name} gust ${p.gst.toFixed(0)} kn</title></circle>`});
+    s+=`<line x1="${X(st.gst)}" y1="${gy-8}" x2="${X(st.gst)}" y2="${gy+8}" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/><text x="${X(st.gst)}" y="${gy+22}" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="var(--ink-2)">${st.gst.toFixed(0)} kn</text>`;
+    if(O)s+=`<circle cx="${X(O.gst)}" cy="${gy}" r="6" fill="none" stroke="var(--obs)" stroke-width="2"><title>Observed gust now ${O.gst.toFixed(0)} kn</title></circle>`}
+  const by=105;
+  s+=`<text x="${L}" y="${by-28}" font-size="11" fill="var(--ink-3)" font-family="var(--body)" letter-spacing=".06em">MEAN WIND</text>`;
+  s+=`<rect x="${X(0)}" y="${by-9}" width="${X(maxK)-X(0)}" height="18" rx="4" fill="var(--line-2)"/>`;
+  const bEdges=[0,1,4,7,11,17,22,28,34,41,48,56,64];
+  bEdges.forEach((e,i)=>{if(e>maxK)return;s+=`<line x1="${X(e)}" y1="${by-9}" x2="${X(e)}" y2="${by+9}" stroke="var(--panel)" stroke-width="1.5"/>`;const nx=bEdges[i+1]??maxK;if(i>0&&nx<=maxK+6)s+=`<text x="${(X(e)+X(Math.min(nx,maxK)))/2}" y="${by+24}" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">F${i}</text>`});
+  if(st.E)s+=`<rect x="${X(st.E.s10)}" y="${by-13}" width="${Math.max(2,X(st.E.s90)-X(st.E.s10))}" height="26" rx="5" fill="none" stroke="var(--accent)" stroke-dasharray="3 3" stroke-opacity=".7"><title>Ensemble 10–90%</title></rect>`;
+  s+=`<rect x="${X(st.spdMin)}" y="${by-9}" width="${Math.max(2,X(st.spdMax)-X(st.spdMin))}" height="18" rx="4" fill="var(--accent-soft)" stroke="var(--accent)" stroke-opacity=".5"/>`;
+  st.per.forEach(p=>{s+=`<circle cx="${X(p.spd)}" cy="${by}" r="4" fill="var(${p.m.c})" stroke="var(--panel)" stroke-width="1.5"><title>${p.m.name} ${p.spd.toFixed(1)} kn</title></circle>`});
+  s+=`<line x1="${X(st.spd)}" y1="${by-16}" x2="${X(st.spd)}" y2="${by+16}" stroke="var(--accent)" stroke-width="4" stroke-linecap="round"/>`;
+  if(O)s+=`<circle cx="${X(O.spd)}" cy="${by}" r="7" fill="none" stroke="var(--obs)" stroke-width="2"><title>Observed now ${O.spd.toFixed(0)} kn</title></circle>`;
+  s+=`<text x="${X(st.spd)}" y="${by+44}" text-anchor="middle" font-family="var(--display)" font-weight="700" font-size="30" fill="var(--ink)">${st.spd.toFixed(0)} kn</text>`;
+  s+=`<text x="${X(st.spd)}" y="${by+60}" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="var(--ink-2)">models ${st.spdMin.toFixed(0)}–${st.spdMax.toFixed(0)} kn${st.E?' · ensemble '+st.E.s10.toFixed(0)+'–'+st.E.s90.toFixed(0):''} · F${bft(st.spdMin)}–F${bft(st.spdMax)}</text>`;
+  for(let k=0;k<=maxK;k+=10)s+=`<text x="${X(k)}" y="${H-6}" text-anchor="${k===0?'start':'middle'}" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${k}</text>`;
+  s+='</svg>';el.innerHTML=s;
+}
+function renderTable(st){
+  const t=$('modelTable');if(!st||st.none){t.innerHTML='';$('tableCap').textContent='';return}
+  const v=verify();const err=id=>{if(!v||!v[id]||v[id].s==null)return '–';const e=v[id];return `${e.s>=0?'+':''}${e.s.toFixed(1)}${e.d!=null?' / '+(e.d>=0?'+':'')+e.d.toFixed(0)+'°':''}`};
+  t.innerHTML=`<thead><tr><th>Model</th><th>Feeds</th><th class="num">Dir</th><th class="num">vs mean</th><th class="num">Mean kn</th><th class="num">Range</th><th class="num">Gust</th><th class="num">Err today</th></tr></thead><tbody>`+
+   st.per.map(p=>{const off=offset(p.dir,st.dir);return `<tr><td><span class="swatch" style="background:var(${p.m.c})"></span>${p.m.name}</td><td style="color:var(--ink-2)">${p.m.used}</td><td class="num">${comp(p.dir)} ${p.dir.toFixed(0)}°</td><td class="num">${off>0?'+':''}${off.toFixed(0)}°</td><td class="num">${p.spd.toFixed(1)}</td><td class="num">${p.spdMin.toFixed(0)}–${p.spdMax.toFixed(0)}</td><td class="num">${p.gst!=null?p.gstMax.toFixed(0):'–'}</td><td class="num">${err(p.m.id)}</td></tr>`}).join('')+
+   `<tr style="font-weight:600"><td>Consensus</td><td></td><td class="num">${comp(st.dir)} ${st.dir.toFixed(0)}°</td><td class="num">±${(st.dirSpread/2).toFixed(0)}°</td><td class="num">${st.spd.toFixed(1)}</td><td class="num">${st.spdMin.toFixed(0)}–${st.spdMax.toFixed(0)}</td><td class="num">${st.gstMax!=null?st.gstMax.toFixed(0):'–'}</td><td class="num">${err('cons')}</td></tr></tbody>`;
+  $('tableCap').textContent=(v&&stationKey())?`Err today = model minus ${STATIONS[stationKey()].name} since ${fmtT(v.since)}: speed in kn, then direction (+ = model is right/clockwise of observed). A sensor at 10–16 m reads higher than the models' 10 m standard in a steady breeze, so a small positive bias is normal.`:'Err today appears once live data is flowing (relay in Settings).';
+}
+
+// ---------- events ----------
+function clampRange(which){let a=+startEl.value,b=+endEl.value;if(a>=b){if(which==='start')endEl.value=Math.min(96,a+4);else startEl.value=Math.max(0,b-4)}}
+startEl.addEventListener('change',()=>{clampRange('start');store.start=startEl.value;store.end=endEl.value;save();view=null;render()});
+endEl.addEventListener('change',()=>{clampRange('end');store.start=startEl.value;store.end=endEl.value;save();view=null;render()});
+startR.addEventListener('input',()=>{startEl.value=startR.value;if(+startEl.value>=+endEl.value)startEl.value=+endEl.value-1;store.start=startEl.value;save();view=null;render()});
+endR.addEventListener('input',()=>{endEl.value=endR.value;if(+endEl.value<=+startEl.value)endEl.value=+startEl.value+1;store.end=endEl.value;save();view=null;render()});
+dateEl.addEventListener('change',()=>{store.date=dateEl.value;save();view=null;render()});
+['obsTime','obsSpeed','obsGust','obsDir','gustThr'].forEach(k=>$(k).addEventListener('input',()=>{store[k]=$(k).value;save();render()}));
+['kStream','slackOff','aLW','aHW','chW','chD','flW','flH','diamond'].forEach(k=>$(k).addEventListener('input',()=>{saveStreamSettings();render()}));
+$('streamMethod').addEventListener('change',()=>{saveStreamSettings();render()});
+$('station').addEventListener('change',()=>{store.station=$('station').value;save();render()});
+$('relay').addEventListener('change',()=>{store.relay=$('relay').value.trim();save();load()});
+$('obsClear').addEventListener('click',()=>{['obsSpeed','obsGust','obsDir'].forEach(k=>{$(k).value='';delete store[k]});$('obsTime').value=fmtT(new Date());save();render()});
+$('showSpread').addEventListener('change',()=>{store.spread=$('showSpread').checked;save();renderTimeline(windowStats())});
+$('showEns').addEventListener('change',()=>{store.ens=$('showEns').checked;save();renderTimeline(windowStats())});
+$('refresh').addEventListener('click',()=>load(true));
+$('zRace').addEventListener('click',()=>{view=defaultView();renderTimeline(windowStats())});
+$('zDay').addEventListener('click',()=>{const {d0,d1}=dayBounds();view={a:d0,b:d1};renderTimeline(windowStats())});
+$('zIn').addEventListener('click',()=>zoomBy(1/1.4));
+$('zOut').addEventListener('click',()=>zoomBy(1.4));
+let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{renderTimeline(windowStats());renderLiveChart(windowStats());renderSky(windowStats())},150)});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)load()});
+function setLed(id,cls){const e=$(id);e.classList.remove('ok','warn','bad');if(cls)e.classList.add(cls)}
+function updateLeds(){setLed('ledModels',wind?(wind.models.length>=4?'ok':'warn'):'bad');setLed('ledEns',ens?'ok':'warn');
+  setLed('ledLive',!relayURL()?'':byDist().length?'ok':'warn');setLed('ledTide',hhaPred?'ok':omTide?'warn':'bad')}
+function applyTheme(){const t=store.theme;const root=document.documentElement;if(t)root.setAttribute('data-theme',t);else root.removeAttribute('data-theme');
+  const dark=t!=='light';$('themeBtn').title=dark?'Switch to day mode':'Switch to night mode'}
+$('themeBtn').addEventListener('click',()=>{const root=document.documentElement;const dark=root.getAttribute('data-theme')!=='light';store.theme=dark?'light':'dark';save();applyTheme();render()});
+applyTheme();
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id===t.dataset.page));store.page=t.dataset.page;save();window.scrollTo(0,0);if(t.dataset.page==='pgTrace')renderTimeline(windowStats());if(t.dataset.page==='pgLive')renderLiveChart(windowStats());if(t.dataset.page==='pgRace')renderMap();if(t.dataset.page==='pgSky')renderSky(windowStats())}));
+if(store.page==='pgMap')store.page='pgRace';
+if(store.page&&document.getElementById(store.page)){const t=document.querySelector('.tab[data-page="'+store.page+'"]');if(t)t.click()}
+$('gearBtn').addEventListener('click',()=>$('sheet').classList.add('on'));
+// ---------- map ----------
+var map,mapLayer,mapTmp,mapPt;
+function tileLayer(){return L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'})}
+function renderMap(){
+  const el=$('map');if(!window.L){el.innerHTML='<p class="note" style="padding:12px">Map library did not load (offline?).</p>';return}
+  if(!map){map=L.map(el,{zoomControl:true,attributionControl:true,renderer:L.canvas()});map._tiles=tileLayer().addTo(map);mapLayer=L.layerGroup().addTo(map);
+    map.on('click',e=>{mapPt=e.latlng;if(mapTmp)mapTmp.remove();mapTmp=L.circleMarker(e.latlng,{radius:7,color:'#ffb000',fillColor:'#000',fillOpacity:1,weight:2,dashArray:'3 3'}).addTo(map);$('mapBarTxt').textContent=`${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)} · ${distNm(V(),{lat:e.latlng.lat,lon:e.latlng.lng}).toFixed(1)} nm from ${V().name}`;$('mapBar').hidden=false})}
+  mapLayer.clearLayers();const v=V();
+  const Rm=radiusNm()*NM*1000;
+  L.circle([v.lat,v.lon],{radius:Rm,color:'#ffb000',weight:1,dashArray:'4 4',fill:false,opacity:.7}).addTo(mapLayer);
+  L.circleMarker([v.lat,v.lon],{radius:8,color:'#000',weight:2,fillColor:'#ffb000',fillOpacity:1}).addTo(mapLayer).bindPopup(`<b>${v.name}</b><br>Forecast point · ${v.lat.toFixed(4)}, ${v.lon.toFixed(4)}<br>Six models, ensembles and modelled tide are computed here.`);
+  if(v.tide&&(v.tide.lat!==v.lat||v.tide.lon!==v.lon))L.circleMarker([v.tide.lat,v.tide.lon],{radius:5,color:'#27c3f3',weight:1.5,fillColor:'#000',fillOpacity:1}).addTo(mapLayer).bindPopup(`<b>Tide model point</b><br>Open-Meteo marine model sampled here (open water).`);
+  const pk=stationKey();
+  Object.keys(STATIONS).forEach(k=>{const S=STATIONS[k];const Lt=latest(k);const plotted=k===pk;
+    const m=L.circleMarker([S.lat,S.lon],{radius:plotted?8:6,color:'#000',weight:1.5,fillColor:plotted?'#ffffff':'#8a949e',fillOpacity:1}).addTo(mapLayer);
+    m.bindPopup(`<b>${S.name}</b><br>${S.note}${Lt?`<br>${comp(Lt.dir)} ${Lt.spd.toFixed(0)} kn · gust ${Lt.gst.toFixed(0)} · ${Lt.dir.toFixed(0)}° · ${fmtT(Lt.t)}`:'<br>no recent reading'}${plotted?'<br><span style="color:var(--good)">plotted on the Now chart</span>':`<br><span class="pl" data-st="${k}">Plot this station ▸</span>`}`)});
+  const g=(hhaTide&&hhaTide.length&&v.hha)?{lat:51.9480,lon:1.2921,name:'Harwich tide gauge'}:eaGauge?{lat:eaGauge.lat,lon:eaGauge.lon,name:eaGauge.name+' tide gauge'}:null;
+  if(g)L.circleMarker([g.lat,g.lon],{radius:6,color:'#000',weight:1.5,fillColor:'#27c3f3',fillOpacity:1}).addTo(mapLayer).bindPopup(`<b>${g.name}</b><br>Observed tide level`);
+  const b=L.latLngBounds([[v.lat,v.lon]]);b.extend(L.latLng(v.lat,v.lon).toBounds(Rm*2.2));map.fitBounds(b,{padding:[10,10]});
+  $('mapTag').textContent=`${Object.keys(STATIONS).length} station${Object.keys(STATIONS).length===1?'':'s'} · radius ${radiusNm()} nm`;
+  setTimeout(()=>map.invalidateSize(),50);
+  map.off('popupopen');map.on('popupopen',e=>{const el2=e.popup.getElement();const pl=el2&&el2.querySelector('.pl');if(pl)pl.addEventListener('click',()=>{store.station=pl.dataset.st;save();$('station').value=store.station;map.closePopup();render();renderMap()})});
+}
+$('mapUse').addEventListener('click',()=>{if(!mapPt)return;const id='v'+Date.now().toString(36);store.venues=(store.venues||[]).concat([{id,name:`Map point ${mapPt.lat.toFixed(3)}, ${mapPt.lng.toFixed(3)}`,sub:'set on the map',lat:mapPt.lat,lon:mapPt.lng}]);store.venueId=id;save();$('mapBar').hidden=true;if(mapTmp){mapTmp.remove();mapTmp=null}switchVenue()});
+$('mapCancel').addEventListener('click',()=>{$('mapBar').hidden=true;if(mapTmp){mapTmp.remove();mapTmp=null}});
+function venueLabel(){const v=V();$('venueBtn').textContent=v.name+(v.sub?' · '+v.sub:'')}
+function renderVenueList(){const cur=V().id;$('vlist').innerHTML=allVenues().map(v=>`<button type="button" data-id="${v.id}" class="${v.id===cur?'cur':''}"><span>${v.name}<br><small>${v.sub||''} · ${v.lat.toFixed(3)}, ${v.lon.toFixed(3)}</small></span>${VENUES_BUILTIN.some(b=>b.id===v.id)?'':'<small data-del="'+v.id+'">remove</small>'}</button>`).join('');
+  $('vlist').querySelectorAll('button').forEach(b=>b.addEventListener('click',e=>{const del=e.target.getAttribute('data-del');if(del){store.venues=(store.venues||[]).filter(v=>v.id!==del);if(store.venueId===del)store.venueId='levington';save();switchVenue();return}store.venueId=b.dataset.id;save();switchVenue()}))}
+function switchVenue(){venueLabel();renderVenueList();loadStreamSettings();view=null;load()}
+async function searchVenue(){const q=($('vq').value||'').trim();if(!q)return;$('vStatus').textContent='Searching…';$('vres').innerHTML='';const out=[];
+  const pc=q.replace(/\s+/g,'').toUpperCase();
+  if(/^[A-Z]{1,2}\d[A-Z\d]?\d[A-Z]{2}$/.test(pc)){try{const j=await getJSON('https://api.postcodes.io/postcodes/'+pc);if(j.result)out.push({name:j.result.postcode,sub:[j.result.parish,j.result.admin_district].filter(Boolean).join(', ')+' · UK',lat:j.result.latitude,lon:j.result.longitude})}catch(e){}}
+  try{const j=await getJSON('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=5&language=en');(j.results||[]).forEach(r=>out.push({name:r.name,sub:[r.admin1,r.country].filter(Boolean).join(', '),lat:r.latitude,lon:r.longitude}))}catch(e){}
+  try{const j=await getJSON('https://photon.komoot.io/api/?q='+encodeURIComponent(q)+'&limit=6');(j.features||[]).forEach(f=>{const p=f.properties||{};const [lon,lat]=f.geometry.coordinates;if(out.some(o=>Math.abs(o.lat-lat)<0.01&&Math.abs(o.lon-lon)<0.01))return;out.push({name:p.name||q,sub:[p.osm_value&&String(p.osm_value).replace(/_/g,' '),p.city||p.county,p.country].filter(Boolean).join(', '),lat,lon})})}catch(e){}
+  if(!out.length){$('vStatus').textContent='Nothing found. Try the nearest town, or a postcode.';return}
+  $('vStatus').textContent=`${out.length} result${out.length>1?'s':''} · tap one to use it`;
+  $('vres').innerHTML=out.slice(0,10).map((r,i)=>`<button type="button" data-i="${i}"><span>${r.name}<br><small>${r.sub||''}</small></span><small>${r.lat.toFixed(3)}, ${r.lon.toFixed(3)}</small></button>`).join('');
+  $('vres').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{const r=out[+b.dataset.i];const id='v'+Date.now().toString(36);store.venues=(store.venues||[]).concat([{id,name:r.name,sub:r.sub,lat:r.lat,lon:r.lon}]);store.venueId=id;save();$('vres').innerHTML='';$('vq').value='';$('vStatus').textContent='';switchVenue()}))}
+$('venueBtn').addEventListener('click',()=>{renderVenueList();$('radius').value=radiusNm();$('radiusOut').textContent=radiusNm()+' nm';$('vsheet').classList.add('on')});
+$('vClose').addEventListener('click',()=>$('vsheet').classList.remove('on'));
+$('vGo').addEventListener('click',searchVenue);$('vq').addEventListener('keydown',e=>{if(e.key==='Enter')searchVenue()});
+let rrt;$('radius').addEventListener('input',()=>{$('radiusOut').textContent=$('radius').value+' nm';store.radius=+$('radius').value;save();clearTimeout(rrt);rrt=setTimeout(load,600)});
+venueLabel();
+$('sheetClose').addEventListener('click',()=>{$('sheet').classList.remove('on');render()});
+setInterval(()=>{if(document.hidden)return;const st=windowStats();if(st&&!st.none&&$('pgRace').classList.contains('on'))renderTiles(st)},1000);
+render();load();
+if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+})();
+</script>
+</body></html>
