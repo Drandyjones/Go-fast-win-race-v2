@@ -160,9 +160,9 @@ a{color:var(--accent)}
 footer{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.6;padding-top:14px}
 /* bottom tabs */
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:9;background:var(--bg);border-top:1px solid var(--line);display:flex;padding:6px max(16px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
-.tab{flex:1;background:none;border:0;color:var(--ink-3);font:700 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:10px 0 8px;display:grid;gap:6px;justify-items:center;border-radius:0}
+.tab{flex:1;background:none;border:0;color:var(--ink-3);font:700 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;padding:10px 0 8px;display:grid;gap:6px;justify-items:center;border-radius:0}
 .tab i{display:block;width:22px;height:3px;background:var(--line)}
-#map{height:calc(100vh - 310px);min-height:320px;background:#0b0d10;border:1px solid var(--line)}
+#map{height:360px;min-height:300px;background:#0b0d10;border:1px solid var(--line)}
 .leaflet-container{background:#0b0d10;font-family:var(--body)}
 :root:not([data-theme="light"]) .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.6)}
 .leaflet-container svg{max-width:none}
@@ -218,6 +218,13 @@ footer{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.
     </div>
     <div id="tiles"></div>
     <div class="status" id="status">Loading…</div>
+    <section class="sec" style="margin-top:14px;border-top:1px solid var(--line);border-bottom:0">
+    <h2>Where the data comes from<span class="tag" id="mapTag"></span></h2>
+    <div id="map" role="application" aria-label="Map of venue and live stations"></div>
+    <div class="mapBar" id="mapBar" hidden><span id="mapBarTxt"></span><button type="button" id="mapUse">Use this spot as venue</button><button type="button" id="mapCancel">Cancel</button></div>
+    <div class="legend"><span><i style="background:var(--accent);height:10px;width:10px;border-radius:50%"></i>Forecast point (venue)</span><span><i style="background:var(--obs);height:10px;width:10px;border-radius:50%"></i>Plotted station</span><span><i style="background:var(--ink-3);height:10px;width:10px;border-radius:50%"></i>Other station</span><span><i style="background:var(--tide);height:10px;width:10px;border-radius:50%"></i>Tide gauge</span><span><i style="border:1px dashed var(--accent);height:10px;width:10px;border-radius:50%;background:none"></i>Search radius</span></div>
+    <div class="caption">Forecasts, ensembles and the modelled tide are for the amber point. Tap a station for its latest reading and to plot it instead; tap anywhere else to set a new venue there. Map © OpenStreetMap contributors.</div>
+    </section>
   </main>
 
   <!-- PAGE: TRACE -->
@@ -308,25 +315,15 @@ footer{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.
       <div class="tableWrap"><table id="modelTable"></table></div>
       <div class="caption" id="tableCap"></div>
     </section>
-    <footer>Forecasts: Open-Meteo (CC BY 4.0) serving ECMWF, NOAA GFS, DWD ICON, UK Met Office, Météo-France and KNMI, plus ECMWF (51) and GEFS (31) ensembles. Live observations and tide predictions: Harwich Haven Authority (hha.co.uk), heights above Harwich chart datum; Open-Meteo marine model (MSL) as fallback. Tide size: predicted range against Harwich springs 3.6 m / neaps 2.3 m. Windy, XC Weather, BBC and PredictWind draw on these same models. GO FAST · WIN RACE v2.7 beta · venues, airport observations and EA tide gauges are new; Levington keeps its Harwich Haven feeds.</footer>
-  </main>
-
-  <!-- PAGE: MAP -->
-  <main class="page wide" id="pgMap">
-    <h2>Where the data comes from<span class="tag" id="mapTag"></span></h2>
-    <div id="map" role="application" aria-label="Map of venue and live stations"></div>
-    <div class="mapBar" id="mapBar" hidden><span id="mapBarTxt"></span><button type="button" id="mapUse">Use this spot as venue</button><button type="button" id="mapCancel">Cancel</button></div>
-    <div class="legend"><span><i style="background:var(--accent);height:10px;width:10px;border-radius:50%"></i>Forecast point (venue)</span><span><i style="background:var(--obs);height:10px;width:10px;border-radius:50%"></i>Plotted station</span><span><i style="background:var(--ink-3);height:10px;width:10px;border-radius:50%"></i>Other station</span><span><i style="background:var(--tide);height:10px;width:10px;border-radius:50%"></i>Tide gauge</span><span><i style="border:1px dashed var(--accent);height:10px;width:10px;border-radius:50%;background:none"></i>Search radius</span></div>
-    <div class="caption">Forecasts, ensembles and the modelled tide are for the amber point. Tap a station for its latest reading and to plot it instead; tap anywhere else to set a new venue there. Map © OpenStreetMap contributors.</div>
+    <footer>Forecasts: Open-Meteo (CC BY 4.0) serving ECMWF, NOAA GFS, DWD ICON, UK Met Office, Météo-France and KNMI, plus ECMWF (51) and GEFS (31) ensembles. Live observations and tide predictions: Harwich Haven Authority (hha.co.uk), heights above Harwich chart datum; Open-Meteo marine model (MSL) as fallback. Tide size: predicted range against Harwich springs 3.6 m / neaps 2.3 m. Windy, XC Weather, BBC and PredictWind draw on these same models. GO FAST · WIN RACE v2.8 beta · venues, airport observations and EA tide gauges are new; Levington keeps its Harwich Haven feeds.</footer>
   </main>
 
   <nav class="tabs" aria-label="Pages">
     <button class="tab on" data-page="pgRace" type="button"><i></i>Race</button>
+    <button class="tab" data-page="pgCond" type="button"><i></i>Brief</button>
     <button class="tab" data-page="pgTrace" type="button"><i></i>Trace</button>
     <button class="tab" data-page="pgSky" type="button"><i></i>Sky</button>
-    <button class="tab" data-page="pgCond" type="button"><i></i>Brief</button>
     <button class="tab" data-page="pgLive" type="button"><i></i>Live</button>
-    <button class="tab" data-page="pgMap" type="button"><i></i>Map</button>
   </nav>
 
   <!-- VENUE SHEET -->
@@ -623,7 +620,7 @@ function render(){
   const st=windowStats();const errs=[];
   [['brief',()=>renderBrief(st)],['tiles',()=>renderTiles(st)],['live',()=>renderLive()],['liveChart',()=>renderLiveChart(st)],['timeline',()=>renderTimeline(st)],['shifts',()=>renderShifts(st)],['compass',()=>renderCompass(st)],['speedbar',()=>renderSpeed(st)],['modelTable',()=>renderTable(st)],['streamNote',()=>renderStreamNote(st)],['skyBrief',()=>renderSkyBrief(st)],['skyChart',()=>renderSky(st)]].forEach(([id,fn])=>{try{fn()}catch(e){errs.push(id+': '+(e&&e.message||e));const el=$(id);if(el)el.innerHTML=`<p class="err">This panel hit an error (${(e&&e.message||e)}). Pull to refresh; if it persists, send this message to Claude.</p>`}});
   if(errs.length)console.error('render errors',errs);
-  if(map&&$('pgMap').classList.contains('on')){try{renderMap()}catch(e){console.error(e)}}
+  if($('pgRace').classList.contains('on')){try{renderMap()}catch(e){console.error(e)}}
 }
 function renderLiveChart(st){
   const el=$('liveChart'),tag=$('accTag');if(!wind){el.innerHTML='<p class="caption">Waiting for forecast…</p>';return}
@@ -1056,7 +1053,8 @@ function applyTheme(){const t=store.theme;const root=document.documentElement;if
   const dark=t!=='light';$('themeBtn').title=dark?'Switch to day mode':'Switch to night mode'}
 $('themeBtn').addEventListener('click',()=>{const root=document.documentElement;const dark=root.getAttribute('data-theme')!=='light';store.theme=dark?'light':'dark';save();applyTheme();render()});
 applyTheme();
-document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id===t.dataset.page));store.page=t.dataset.page;save();window.scrollTo(0,0);if(t.dataset.page==='pgTrace')renderTimeline(windowStats());if(t.dataset.page==='pgLive')renderLiveChart(windowStats());if(t.dataset.page==='pgMap')renderMap();if(t.dataset.page==='pgSky')renderSky(windowStats())}));
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id===t.dataset.page));store.page=t.dataset.page;save();window.scrollTo(0,0);if(t.dataset.page==='pgTrace')renderTimeline(windowStats());if(t.dataset.page==='pgLive')renderLiveChart(windowStats());if(t.dataset.page==='pgRace')renderMap();if(t.dataset.page==='pgSky')renderSky(windowStats())}));
+if(store.page==='pgMap')store.page='pgRace';
 if(store.page&&document.getElementById(store.page)){const t=document.querySelector('.tab[data-page="'+store.page+'"]');if(t)t.click()}
 $('gearBtn').addEventListener('click',()=>$('sheet').classList.add('on'));
 // ---------- map ----------
