@@ -249,7 +249,7 @@ footer{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.
       <h2>Race day<span class="tag">Temperature · Rain · Cloud · Pressure</span></h2>
       <div class="chartBox" id="skyChart"></div>
       <div class="legend"><span><i style="background:var(--temp);height:3px"></i><b>Air °C</b></span><span><i style="background:var(--ink-3);height:3px"></i>Feels like</span><span><i style="background:var(--obs)"></i>Observed</span><span><i style="background:var(--tide);height:8px"></i>Rain mm/h</span><span><i class="dash" style="background:repeating-linear-gradient(90deg,var(--tide) 0 4px,transparent 4px 7px)"></i>Chance %</span><span><i style="background:var(--ink-2);height:8px;opacity:.5"></i>Cloud</span><span><i style="background:var(--accent);height:2px"></i>Pressure</span></div>
-      <div class="caption">Forecast from Open-Meteo's best-match model for this point; temperature line is the six-model consensus where it differs. Observed temperature and pressure from the plotted station when the race is today. Race window shaded.</div>
+      <div class="caption">Forecast from Open-Meteo's best-match model for this point. Observed temperature and pressure from the plotted station when the race is today. Race window shaded.</div>
     </section>
     <section class="sec">
       <h2>Hour by hour<span class="tag">Race window</span></h2>
@@ -308,7 +308,7 @@ footer{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.
       <div class="tableWrap"><table id="modelTable"></table></div>
       <div class="caption" id="tableCap"></div>
     </section>
-    <footer>Forecasts: Open-Meteo (CC BY 4.0) serving ECMWF, NOAA GFS, DWD ICON, UK Met Office, Météo-France and KNMI, plus ECMWF (51) and GEFS (31) ensembles. Live observations and tide predictions: Harwich Haven Authority (hha.co.uk), heights above Harwich chart datum; Open-Meteo marine model (MSL) as fallback. Tide size: predicted range against Harwich springs 3.6 m / neaps 2.3 m. Windy, XC Weather, BBC and PredictWind draw on these same models. GO FAST · WIN RACE v2.5 beta · venues, airport observations and EA tide gauges are new; Levington keeps its Harwich Haven feeds.</footer>
+    <footer>Forecasts: Open-Meteo (CC BY 4.0) serving ECMWF, NOAA GFS, DWD ICON, UK Met Office, Météo-France and KNMI, plus ECMWF (51) and GEFS (31) ensembles. Live observations and tide predictions: Harwich Haven Authority (hha.co.uk), heights above Harwich chart datum; Open-Meteo marine model (MSL) as fallback. Tide size: predicted range against Harwich springs 3.6 m / neaps 2.3 m. Windy, XC Weather, BBC and PredictWind draw on these same models. GO FAST · WIN RACE v2.7 beta · venues, airport observations and EA tide gauges are new; Levington keeps its Harwich Haven feeds.</footer>
   </main>
 
   <!-- PAGE: MAP -->
@@ -468,16 +468,17 @@ async function cachedJSON(key,u,force){const ck='gfc_'+key+'_'+V().id;let c=null
   try{const d=await getJSON(u);if(d&&d.error)throw new Error(d.reason||'API error');try{localStorage.setItem(ck,JSON.stringify({at:Date.now(),url:u,data:d}))}catch(e){}return d}
   catch(e){if(c&&c.url===u){usedCache.push(key+' (stale '+fmtT(c.at)+')');return c.data}throw e}}
 async function hha(path){const rl=relayURL();if(!rl)throw new Error('no relay');return getJSON(rl+encodeURIComponent(HHA+path+'?t='+Math.floor(Date.now()/6e4)))}
+let retryT=null,retryN=0;
 async function load(force){
   const msgs=[];usedCache=[];$('status').textContent='Loading…';
   const jobs=[
-    cachedJSON('models',`https://api.open-meteo.com/v1/forecast?latitude=${LOC.lat}&longitude=${LOC.lon}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m&wind_speed_unit=kn&models=${MODELS.map(m=>m.id).join(',')}&past_days=1&forecast_days=7&timezone=Europe%2FLondon`,force).then(j=>{
+    cachedJSON('models',`https://api.open-meteo.com/v1/forecast?latitude=${LOC.lat}&longitude=${LOC.lon}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kn&models=${MODELS.map(m=>m.id).join(',')}&past_days=1&forecast_days=7&timezone=Europe%2FLondon`,force).then(j=>{
       if(j.error)throw new Error(j.reason);const h=j.hourly;const t0=parseLocal(h.time[0]);
-      const ms=MODELS.map(m=>{const sfx=k=>h[k+'_'+m.id]||(Object.keys(h).some(x=>x.endsWith('_'+m.id))?null:h[k]);return {...m,spd:sfx('wind_speed_10m'),dir:sfx('wind_direction_10m'),gst:sfx('wind_gusts_10m'),tmp:sfx('temperature_2m')}}).filter(m=>m.spd&&m.dir&&m.spd.some(v=>v!=null));
+      const ms=MODELS.map(m=>{const sfx=k=>h[k+'_'+m.id]||(Object.keys(h).some(x=>x.endsWith('_'+m.id))?null:h[k]);return {...m,spd:sfx('wind_speed_10m'),dir:sfx('wind_direction_10m'),gst:sfx('wind_gusts_10m')}}).filter(m=>m.spd&&m.dir&&m.spd.some(v=>v!=null));
       wind={t0,n:h.time.length,models:ms};msgs.push(`${ms.length}/${MODELS.length} models`)}).catch(e=>{wind=null;msgs.push('models failed: '+e.message)}),
     cachedJSON('sky',`https://api.open-meteo.com/v1/forecast?latitude=${LOC.lat}&longitude=${LOC.lon}&hourly=temperature_2m,apparent_temperature,precipitation,precipitation_probability,cloud_cover,weather_code,pressure_msl,visibility,relative_humidity_2m&past_days=1&forecast_days=7&timezone=Europe%2FLondon`,force).then(j=>{
       if(j.error)throw new Error(j.reason);const hh=j.hourly;sky={t0:parseLocal(hh.time[0]),n:hh.time.length,temp:hh.temperature_2m,feel:hh.apparent_temperature,rain:hh.precipitation,pop:hh.precipitation_probability,cloud:hh.cloud_cover,code:hh.weather_code,pres:hh.pressure_msl,vis:hh.visibility,rh:hh.relative_humidity_2m}}).catch(e=>{sky=null;msgs.push('sky failed: '+e.message)}),
-    cachedJSON('ens',`https://ensemble-api.open-meteo.com/v1/ensemble?latitude=${LOC.lat}&longitude=${LOC.lon}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kn&models=ecmwf_ifs025,gfs025&forecast_days=7&timezone=Europe%2FLondon`,force).then(j=>{
+    cachedJSON('ens',`https://ensemble-api.open-meteo.com/v1/ensemble?latitude=${LOC.lat}&longitude=${LOC.lon}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kn&models=ecmwf_ifs025,gfs025&forecast_days=4&timezone=Europe%2FLondon`,force).then(j=>{
       if(j.error)throw new Error(j.reason);const h=j.hourly;const keys=Object.keys(h);const spd=[],dir=[],gst=[];
       keys.forEach(k=>{if(k.startsWith('wind_speed_10m'))spd.push(h[k]);else if(k.startsWith('wind_direction_10m'))dir.push(h[k]);else if(k.startsWith('wind_gusts_10m'))gst.push(h[k])});
       ens={t0:parseLocal(h.time[0]),n:h.time.length,spd,dir,gst};msgs.push(`${spd.length} ensemble members`)}).catch(e=>{ens=null;msgs.push('ensemble failed: '+e.message)}),
@@ -505,6 +506,9 @@ async function load(force){
   const nSt=byDist().length;if(relayURL())msgs.push(nSt?`${nSt} live station${nSt>1?'s':''} within ${radiusNm()} nm`:`no live wind within ${radiusNm()} nm`);else msgs.push('no relay: live data off');
   fillStationSelect();
   if(usedCache.length)msgs.push('from cache: '+usedCache.join(', '));
+  if(msgs.some(m=>/limit exceeded/i.test(m)))msgs.push('Open-Meteo allowance hit – resets at midnight UTC; cached data shown where available');
+  const transient=msgs.some(m=>/overloaded|limit exceeded|HTTP 5\d\d|Failed to fetch/i.test(m));
+  clearTimeout(retryT);if(transient&&retryN<3){retryN++;const at=Date.now()+45e3;msgs.push(`retry ${retryN}/3 at ${fmtT(at)}`);retryT=setTimeout(()=>load(true),45e3)}else if(!transient)retryN=0;
   $('status').textContent=msgs.join(' · ')+' · '+fmtT(new Date());
   updateLeds();render();
 }
@@ -519,7 +523,8 @@ function consensusAt(t){ // {spd,gst,dir,min,max,vals}
   if(!wind)return null;const x=hrs(t,wind.t0);if(x<0||x>wind.n-1)return null;const vals=[],gs=[],ds=[];
   const tps=[];wind.models.forEach(m=>{vals.push(interp(m.spd,x));gs.push(interp(m.gst,x));ds.push(interpDir(m.dir,x));tps.push(m.tmp?interp(m.tmp,x):null)});
   const ok=vals.filter(v=>v!=null),okg=gs.filter(v=>v!=null),okd=ds.filter(v=>v!=null),okt=tps.filter(v=>v!=null);if(!ok.length)return null;
-  return {t,spd:mean(ok),min:Math.min(...ok),max:Math.max(...ok),gst:okg.length?mean(okg):null,dir:okd.length?circMean(okd).mean:null,tmp:okt.length?mean(okt):null,vals,gs,ds}}
+  const skyT=(sky&&sky.temp)?interp(sky.temp,hrs(t,sky.t0)):null;
+  return {t,spd:mean(ok),min:Math.min(...ok),max:Math.max(...ok),gst:okg.length?mean(okg):null,dir:okd.length?circMean(okd).mean:null,tmp:okt.length?mean(okt):skyT,vals,gs,ds}}
 function ensAt(t){if(!ens)return null;const x=hrs(t,ens.t0);if(x<0||x>ens.n-1)return null;
   const s=ens.spd.map(a=>interp(a,x)).filter(v=>v!=null),g=ens.gst.map(a=>interp(a,x)).filter(v=>v!=null),d=ens.dir.map(a=>interpDir(a,x)).filter(v=>v!=null);
   if(s.length<5)return null;return {s10:pct(s,.1),s25:pct(s,.25),s50:pct(s,.5),s75:pct(s,.75),s90:pct(s,.9),g90:pct(g,.9),dirs:d}}
@@ -677,8 +682,8 @@ function renderLiveChart(st){
 
 // ---------- sky (temperature, rain, cloud, pressure) ----------
 const WMO={0:'clear',1:'mainly clear',2:'partly cloudy',3:'overcast',45:'fog',48:'freezing fog',51:'light drizzle',53:'drizzle',55:'heavy drizzle',56:'freezing drizzle',57:'freezing drizzle',61:'light rain',63:'rain',65:'heavy rain',66:'freezing rain',67:'freezing rain',71:'light snow',73:'snow',75:'heavy snow',77:'snow grains',80:'light showers',81:'showers',82:'heavy showers',85:'snow showers',86:'heavy snow showers',95:'thunderstorms',96:'thunder with hail',99:'thunder with heavy hail'};
-function skyAt(t){if(!sky)return null;const x=hrs(t,sky.t0);if(x<0||x>sky.n-1)return null;const i=Math.round(x);const g=k=>sky[k]?sky[k][i]:null;const c=consensusAt(t);
-  return {t,temp:c&&c.tmp!=null?c.tmp:interp(sky.temp,x),feel:interp(sky.feel,x),rain:g('rain'),pop:g('pop'),cloud:interp(sky.cloud,x),code:g('code'),pres:interp(sky.pres,x),vis:g('vis'),rh:interp(sky.rh,x)}}
+function skyAt(t){if(!sky)return null;const x=hrs(t,sky.t0);if(x<0||x>sky.n-1)return null;const i=Math.round(x);const g=k=>sky[k]?sky[k][i]:null;
+  return {t,temp:interp(sky.temp,x),feel:interp(sky.feel,x),rain:g('rain'),pop:g('pop'),cloud:interp(sky.cloud,x),code:g('code'),pres:interp(sky.pres,x),vis:g('vis'),rh:interp(sky.rh,x)}}
 function renderSkyBrief(st){
   const el=$('skyBrief');if(!st||st.none||!sky){el.innerHTML='<h2>Sky over the race</h2><p>'+(sky?'No forecast for that window yet.':'Waiting for the weather forecast…')+'</p>';return}
   const pts=[];for(let t=st.tS;t<=st.tE;t+=36e5){const p=skyAt(t);if(p)pts.push(p)}if(!pts.length){el.innerHTML='<h2>Sky over the race</h2><p>No forecast for that window yet.</p>';return}
