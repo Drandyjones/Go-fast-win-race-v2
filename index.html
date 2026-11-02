@@ -308,7 +308,7 @@ footer{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.
       <div class="tableWrap"><table id="modelTable"></table></div>
       <div class="caption" id="tableCap"></div>
     </section>
-    <footer>Forecasts: Open-Meteo (CC BY 4.0) serving ECMWF, NOAA GFS, DWD ICON, UK Met Office, Météo-France and KNMI, plus ECMWF (51) and GEFS (31) ensembles. Live observations and tide predictions: Harwich Haven Authority (hha.co.uk), heights above Harwich chart datum; Open-Meteo marine model (MSL) as fallback. Tide size: predicted range against Harwich springs 3.6 m / neaps 2.3 m. Windy, XC Weather, BBC and PredictWind draw on these same models. GO FAST · WIN RACE v2.4 beta · venues, airport observations and EA tide gauges are new; Levington keeps its Harwich Haven feeds.</footer>
+    <footer>Forecasts: Open-Meteo (CC BY 4.0) serving ECMWF, NOAA GFS, DWD ICON, UK Met Office, Météo-France and KNMI, plus ECMWF (51) and GEFS (31) ensembles. Live observations and tide predictions: Harwich Haven Authority (hha.co.uk), heights above Harwich chart datum; Open-Meteo marine model (MSL) as fallback. Tide size: predicted range against Harwich springs 3.6 m / neaps 2.3 m. Windy, XC Weather, BBC and PredictWind draw on these same models. GO FAST · WIN RACE v2.5 beta · venues, airport observations and EA tide gauges are new; Levington keeps its Harwich Haven feeds.</footer>
   </main>
 
   <!-- PAGE: MAP -->
@@ -461,22 +461,27 @@ function streamMethod(){const m=$('streamMethod').value;if(m==='diamond'&&diamon
 
 // ---------- data ----------
 function parseLocal(s){const [d,t]=s.split('T');const [y,m,dd]=d.split('-').map(Number);const [hh,mm]=t.split(':').map(Number);return new Date(y,m-1,dd,hh,mm)}
-async function getJSON(u){const r=await fetch(u);if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
+async function getJSON(u){const r=await fetch(u);let j=null;try{j=await r.json()}catch(e){}if(!r.ok)throw new Error((j&&j.reason)||('HTTP '+r.status));return j}
+const FRESH_MS=15*6e4;let usedCache=[];
+async function cachedJSON(key,u,force){const ck='gfc_'+key+'_'+V().id;let c=null;try{c=JSON.parse(localStorage.getItem(ck)||'null')}catch(e){}
+  if(c&&c.url===u&&!force&&Date.now()-c.at<FRESH_MS){usedCache.push(key);return c.data}
+  try{const d=await getJSON(u);if(d&&d.error)throw new Error(d.reason||'API error');try{localStorage.setItem(ck,JSON.stringify({at:Date.now(),url:u,data:d}))}catch(e){}return d}
+  catch(e){if(c&&c.url===u){usedCache.push(key+' (stale '+fmtT(c.at)+')');return c.data}throw e}}
 async function hha(path){const rl=relayURL();if(!rl)throw new Error('no relay');return getJSON(rl+encodeURIComponent(HHA+path+'?t='+Math.floor(Date.now()/6e4)))}
-async function load(){
-  const msgs=[];$('status').textContent='Loading…';
+async function load(force){
+  const msgs=[];usedCache=[];$('status').textContent='Loading…';
   const jobs=[
-    getJSON(`https://api.open-meteo.com/v1/forecast?latitude=${LOC.lat}&longitude=${LOC.lon}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m&wind_speed_unit=kn&models=${MODELS.map(m=>m.id).join(',')}&past_days=1&forecast_days=7&timezone=Europe%2FLondon`).then(j=>{
+    cachedJSON('models',`https://api.open-meteo.com/v1/forecast?latitude=${LOC.lat}&longitude=${LOC.lon}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m&wind_speed_unit=kn&models=${MODELS.map(m=>m.id).join(',')}&past_days=1&forecast_days=7&timezone=Europe%2FLondon`,force).then(j=>{
       if(j.error)throw new Error(j.reason);const h=j.hourly;const t0=parseLocal(h.time[0]);
       const ms=MODELS.map(m=>{const sfx=k=>h[k+'_'+m.id]||(Object.keys(h).some(x=>x.endsWith('_'+m.id))?null:h[k]);return {...m,spd:sfx('wind_speed_10m'),dir:sfx('wind_direction_10m'),gst:sfx('wind_gusts_10m'),tmp:sfx('temperature_2m')}}).filter(m=>m.spd&&m.dir&&m.spd.some(v=>v!=null));
       wind={t0,n:h.time.length,models:ms};msgs.push(`${ms.length}/${MODELS.length} models`)}).catch(e=>{wind=null;msgs.push('models failed: '+e.message)}),
-    getJSON(`https://api.open-meteo.com/v1/forecast?latitude=${LOC.lat}&longitude=${LOC.lon}&hourly=temperature_2m,apparent_temperature,precipitation,precipitation_probability,cloud_cover,weather_code,pressure_msl,visibility,relative_humidity_2m&past_days=1&forecast_days=7&timezone=Europe%2FLondon`).then(j=>{
-      if(j.error)throw new Error(j.reason);const hh=j.hourly;sky={t0:parseLocal(hh.time[0]),n:hh.time.length,temp:hh.temperature_2m,feel:hh.apparent_temperature,rain:hh.precipitation,pop:hh.precipitation_probability,cloud:hh.cloud_cover,code:hh.weather_code,pres:hh.pressure_msl,vis:hh.visibility,rh:hh.relative_humidity_2m}}).catch(e=>{sky=null;msgs.push('sky failed')}),
-    getJSON(`https://ensemble-api.open-meteo.com/v1/ensemble?latitude=${LOC.lat}&longitude=${LOC.lon}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kn&models=ecmwf_ifs025,gfs025&forecast_days=7&timezone=Europe%2FLondon`).then(j=>{
+    cachedJSON('sky',`https://api.open-meteo.com/v1/forecast?latitude=${LOC.lat}&longitude=${LOC.lon}&hourly=temperature_2m,apparent_temperature,precipitation,precipitation_probability,cloud_cover,weather_code,pressure_msl,visibility,relative_humidity_2m&past_days=1&forecast_days=7&timezone=Europe%2FLondon`,force).then(j=>{
+      if(j.error)throw new Error(j.reason);const hh=j.hourly;sky={t0:parseLocal(hh.time[0]),n:hh.time.length,temp:hh.temperature_2m,feel:hh.apparent_temperature,rain:hh.precipitation,pop:hh.precipitation_probability,cloud:hh.cloud_cover,code:hh.weather_code,pres:hh.pressure_msl,vis:hh.visibility,rh:hh.relative_humidity_2m}}).catch(e=>{sky=null;msgs.push('sky failed: '+e.message)}),
+    cachedJSON('ens',`https://ensemble-api.open-meteo.com/v1/ensemble?latitude=${LOC.lat}&longitude=${LOC.lon}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kn&models=ecmwf_ifs025,gfs025&forecast_days=7&timezone=Europe%2FLondon`,force).then(j=>{
       if(j.error)throw new Error(j.reason);const h=j.hourly;const keys=Object.keys(h);const spd=[],dir=[],gst=[];
       keys.forEach(k=>{if(k.startsWith('wind_speed_10m'))spd.push(h[k]);else if(k.startsWith('wind_direction_10m'))dir.push(h[k]);else if(k.startsWith('wind_gusts_10m'))gst.push(h[k])});
-      ens={t0:parseLocal(h.time[0]),n:h.time.length,spd,dir,gst};msgs.push(`${spd.length} ensemble members`)}).catch(e=>{ens=null;msgs.push('ensemble failed')}),
-    getJSON(`https://marine-api.open-meteo.com/v1/marine?latitude=${TIDE_PT.lat}&longitude=${TIDE_PT.lon}&hourly=sea_level_height_msl&past_days=1&forecast_days=7&timezone=Europe%2FLondon`).then(j=>{
+      ens={t0:parseLocal(h.time[0]),n:h.time.length,spd,dir,gst};msgs.push(`${spd.length} ensemble members`)}).catch(e=>{ens=null;msgs.push('ensemble failed: '+e.message)}),
+    cachedJSON('marine',`https://marine-api.open-meteo.com/v1/marine?latitude=${TIDE_PT.lat}&longitude=${TIDE_PT.lon}&hourly=sea_level_height_msl&past_days=1&forecast_days=7&timezone=Europe%2FLondon`,force).then(j=>{
       if(j.error)throw new Error(j.reason);omTide={t0:parseLocal(j.hourly.time[0]).getTime(),step:36e5,h:j.hourly.sea_level_height_msl,datum:'MSL',src:'Open-Meteo model'};omTide.ext=extremaOf(omTide)}).catch(e=>{omTide=null})
   ];
   STATIONS={};live={};eaGauge=null;
@@ -499,6 +504,7 @@ async function load(){
   await Promise.all(jobs);
   const nSt=byDist().length;if(relayURL())msgs.push(nSt?`${nSt} live station${nSt>1?'s':''} within ${radiusNm()} nm`:`no live wind within ${radiusNm()} nm`);else msgs.push('no relay: live data off');
   fillStationSelect();
+  if(usedCache.length)msgs.push('from cache: '+usedCache.join(', '));
   $('status').textContent=msgs.join(' · ')+' · '+fmtT(new Date());
   updateLeds();render();
 }
@@ -1031,13 +1037,13 @@ $('relay').addEventListener('change',()=>{store.relay=$('relay').value.trim();sa
 $('obsClear').addEventListener('click',()=>{['obsSpeed','obsGust','obsDir'].forEach(k=>{$(k).value='';delete store[k]});$('obsTime').value=fmtT(new Date());save();render()});
 $('showSpread').addEventListener('change',()=>{store.spread=$('showSpread').checked;save();renderTimeline(windowStats())});
 $('showEns').addEventListener('change',()=>{store.ens=$('showEns').checked;save();renderTimeline(windowStats())});
-$('refresh').addEventListener('click',load);
+$('refresh').addEventListener('click',()=>load(true));
 $('zRace').addEventListener('click',()=>{view=defaultView();renderTimeline(windowStats())});
 $('zDay').addEventListener('click',()=>{const {d0,d1}=dayBounds();view={a:d0,b:d1};renderTimeline(windowStats())});
 $('zIn').addEventListener('click',()=>zoomBy(1/1.4));
 $('zOut').addEventListener('click',()=>zoomBy(1.4));
 let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{renderTimeline(windowStats());renderLiveChart(windowStats());renderSky(windowStats())},150)});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&relayURL())load()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)load()});
 function setLed(id,cls){const e=$(id);e.classList.remove('ok','warn','bad');if(cls)e.classList.add(cls)}
 function updateLeds(){setLed('ledModels',wind?(wind.models.length>=4?'ok':'warn'):'bad');setLed('ledEns',ens?'ok':'warn');
   setLed('ledLive',!relayURL()?'':byDist().length?'ok':'warn');setLed('ledTide',hhaPred?'ok':omTide?'warn':'bad')}
